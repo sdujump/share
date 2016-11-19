@@ -18,7 +18,7 @@ tf.app.flags.DEFINE_string("train_image_dir", "train_images", "")
 tf.app.flags.DEFINE_string("model_dir", "model", "")
 tf.app.flags.DEFINE_integer("max_epoch", 1000, "")
 tf.app.flags.DEFINE_integer("num_trains_per_epoch", 1, "")
-tf.app.flags.DEFINE_integer("batchsize", 10, "")
+tf.app.flags.DEFINE_integer("batchsize", 100, "")
 tf.app.flags.DEFINE_integer("n_steps_to_optimize_dis", 1, "")
 tf.app.flags.DEFINE_integer("ndim_y", 10, "")
 tf.app.flags.DEFINE_integer("ndim_x", 28 * 28, "")
@@ -33,7 +33,7 @@ def show_variables(variales):
         print(variales[i].name)
 
 
-def get_image(path, epochs, shuffle=False, crop=True):
+def get_image(path, epochs, shuffle=False):
     filenames = [join(path, f) for f in listdir(path) if isfile(
         join(path, f)) & f.lower().endswith('bmp')]
     filename_queue = tf.train.string_input_producer(
@@ -87,34 +87,39 @@ def train_autoencoder():
     image_paths = FLAGS.train_image_dir
     ndim_z = FLAGS.ndim_z
     batchsize = FLAGS.batchsize
-    input_image, _ = get_image(image_paths, 2, False)
+    input_image, _ = get_image(image_paths, 2, True)
     input_images = tf.train.batch([input_image], batchsize, dynamic_pad=True)
     size = 784
 
-    reconst, latent = vaemodel.encoder_decoder(input_images, size, ndim_z, size)
-    reconst_img = tf.reshape(reconst, tf.shape(input_images))
-    rec_loss = tf.nn.l2_loss(tf.to_float(input_images) - reconst_img) / tf.to_float(size * batchsize)
-    rec_vars = [v for v in tf.all_variables() if v.name.startswith("encoder_decoder/")]
-    rec_optimizer = tf.train.AdamOptimizer(learning_rate=0.0001)
+    reconst, z_mean, z_log_sigma_sq = vaemodel.encoder_z_decoder(input_images, size, ndim_z, size)
+    reconst_img = tf.reshape(reconst, tf.shape(input_images)) * 255.0
+    flat_input = tf.to_float(tf.reshape(input_images, [batchsize, -1])) / 255.0
+    # rec_loss = tf.nn.l2_loss(flat_input - reconst) / tf.to_float(size * batchsize)
+    rec_loss = -tf.reduce_sum(flat_input * tf.log(1e-3 + reconst) + (1. - flat_input) * tf.log(1e-3 + 1. - reconst), 1)
+    latent_loss = -0.5 * tf.reduce_sum(1 + z_log_sigma_sq - tf.square(z_mean) - tf.exp(z_log_sigma_sq), 1)
+    total_cost = tf.reduce_mean(rec_loss + latent_loss)
+    rec_vars = [v for v in tf.all_variables() if v.name.startswith("encoder_z_decoder/")]
+    rec_optimizer = tf.train.AdamOptimizer(learning_rate=0.001)
     rec_step = tf.Variable(0, name="rec_step", trainable=False)
-    rec_op = minimize_and_clip(rec_optimizer, objective=rec_loss, var_list=rec_vars, step=rec_step)
+    rec_op = minimize_and_clip(rec_optimizer, objective=total_cost, var_list=rec_vars, step=rec_step)
 
-    # pz_priors = vaemodel.get_prior([batchsize] + [ndim_z])
+    '''
     pz_priors = tf.placeholder(tf.float32, (batchsize, ndim_z))
     dis_latent_outputs = vaemodel.discriminator(latent)
     dis_prior_outputs = vaemodel.discriminator(pz_priors, reuse=True)
 
-    dis_loss = tf.reduce_mean(tf.log(dis_prior_outputs) + tf.log(1. - dis_latent_outputs))
+    dis_loss = tf.reduce_sum(tf.log(dis_prior_outputs) + tf.log(1. - dis_latent_outputs))
     dis_vars = [v for v in tf.all_variables() if v.name.startswith("discriminator/")]
     dis_optimizer = tf.train.AdamOptimizer(learning_rate=0.0001)
     dis_step = tf.Variable(0, name="dis_step", trainable=False)
     dis_op = minimize_and_clip(dis_optimizer, objective=-dis_loss, var_list=dis_vars, step=dis_step)
 
-    gen_loss = tf.reduce_mean(tf.log(dis_latent_outputs))
+    gen_loss = tf.reduce_sum(tf.log(dis_latent_outputs))
     gen_vars = [v for v in tf.all_variables() if v.name.startswith("encoder_decoder/encoder/")]
     gen_optimizer = tf.train.AdamOptimizer(learning_rate=0.0001)
     gen_step = tf.Variable(0, name="gen_step", trainable=False)
     gen_op = minimize_and_clip(gen_optimizer, objective=-gen_loss, var_list=gen_vars, step=gen_step)
+    '''
 
     with tf.Session() as sess:
             saver = tf.train.Saver(tf.all_variables())
@@ -132,19 +137,20 @@ def train_autoencoder():
             start_time = time.time()
             try:
                 while not coord.should_stop():
-                    recloss, _, recstep = sess.run([rec_loss, rec_op, rec_step])
+                    aaa, bbb = sess.run([flat_input, reconst])
+                    recloss, _, recstep = sess.run([tf.reduce_sum(rec_loss), rec_op, rec_step])
                     # disloss, _, disstep = sess.run([dis_loss, dis_op, dis_step], {pz_priors: np.random.uniform(-2., 2., size=(batchsize, ndim_z)).astype(np.float32)})
                     # genloss, _, genstep = sess.run([gen_loss, gen_op, gen_step])
                     elapsed_time = time.time() - start_time
                     start_time = time.time()
-                    if recstep % 10 == 0:
+                    if recstep % 100 == 0:
                         print(recstep, recloss, elapsed_time)
                         # print(disstep, disloss, elapsed_time)
                         # print(genstep, genstep, elapsed_time)
                         output_t = sess.run(reconst_img)
                         for i, raw_image in enumerate(output_t):
                             io.imsave('test/out%s-%s.png' % (recstep, i + 1), np.reshape(raw_image.astype("uint8"), (28, 28)))
-                    if recstep % 100 == 0:
+                    if recstep % 1000 == 0:
                         saver.save(sess, FLAGS.model_dir + '/autoencoder-model', global_step=recstep)
             except tf.errors.OutOfRangeError:
                 print('Done training -- epoch limit reached')
