@@ -137,7 +137,7 @@ def train_autoencoder():
             start_time = time.time()
             try:
                 while not coord.should_stop():
-                    aaa, bbb = sess.run([flat_input, reconst])
+                    # aaa, bbb = sess.run([flat_input, reconst])
                     recloss, _, recstep = sess.run([tf.reduce_sum(rec_loss), rec_op, rec_step])
                     # disloss, _, disstep = sess.run([dis_loss, dis_op, dis_step], {pz_priors: np.random.uniform(-2., 2., size=(batchsize, ndim_z)).astype(np.float32)})
                     # genloss, _, genstep = sess.run([gen_loss, gen_op, gen_step])
