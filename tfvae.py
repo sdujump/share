@@ -22,7 +22,7 @@ tf.app.flags.DEFINE_integer("batchsize", 100, "")
 tf.app.flags.DEFINE_integer("n_steps_to_optimize_dis", 1, "")
 tf.app.flags.DEFINE_integer("ndim_y", 10, "")
 tf.app.flags.DEFINE_integer("ndim_x", 28 * 28, "")
-tf.app.flags.DEFINE_integer("ndim_z", 2, "")
+tf.app.flags.DEFINE_integer("ndim_z", 20, "")
 tf.app.flags.DEFINE_integer("gpu_enabled", 0, "")
 
 FLAGS = tf.app.flags.FLAGS
@@ -42,7 +42,7 @@ def get_image(path, epochs, shuffle=False):
     reader = tf.FixedLengthRecordReader(record_bytes=1862)
     img_key, img_bytes = reader.read(filename_queue)
     # image = tf.image.decode_jpeg(img_bytes, channels=3)
-    image = tf.decode_raw(img_bytes, tf.uint8)
+    image = tf.to_float(tf.decode_raw(img_bytes, tf.uint8)) / 255.0
     slice_image = tf.image.rot90(tf.expand_dims(tf.transpose(tf.reshape(
         tf.gather(image, tf.range(1862 - 784, 1862)), (28, 28))), 2), 1)
     return slice_image, img_key
@@ -87,13 +87,13 @@ def train_autoencoder():
     image_paths = FLAGS.train_image_dir
     ndim_z = FLAGS.ndim_z
     batchsize = FLAGS.batchsize
-    input_image, _ = get_image(image_paths, 2, True)
+    input_image, _ = get_image(image_paths, 75, True)
     input_images = tf.train.batch([input_image], batchsize, dynamic_pad=True)
     size = 784
 
     reconst, z_mean, z_log_sigma_sq = vaemodel.encoder_z_decoder(input_images, size, ndim_z, size)
     reconst_img = tf.reshape(reconst, tf.shape(input_images)) * 255.0
-    flat_input = tf.to_float(tf.reshape(input_images, [batchsize, -1])) / 255.0
+    flat_input = tf.to_float(tf.reshape(input_images, [batchsize, -1]))
     # rec_loss = tf.nn.l2_loss(flat_input - reconst) / tf.to_float(size * batchsize)
     rec_loss = -tf.reduce_sum(flat_input * tf.log(1e-3 + reconst) + (1. - flat_input) * tf.log(1e-3 + 1. - reconst), 1)
     latent_loss = -0.5 * tf.reduce_sum(1 + z_log_sigma_sq - tf.square(z_mean) - tf.exp(z_log_sigma_sq), 1)
@@ -137,7 +137,7 @@ def train_autoencoder():
             start_time = time.time()
             try:
                 while not coord.should_stop():
-                    # aaa, bbb = sess.run([flat_input, reconst])
+                    aaa, bbb = sess.run([z_mean, z_log_sigma_sq])
                     recloss, _, recstep = sess.run([tf.reduce_sum(rec_loss), rec_op, rec_step])
                     # disloss, _, disstep = sess.run([dis_loss, dis_op, dis_step], {pz_priors: np.random.uniform(-2., 2., size=(batchsize, ndim_z)).astype(np.float32)})
                     # genloss, _, genstep = sess.run([gen_loss, gen_op, gen_step])

@@ -83,9 +83,9 @@ def batch_norm(x, size, axes=[0, 1, 2]):
 def encoder(x, input_dims, latent_dims, reuse=False):
     with tf.variable_scope('encoder', reuse=reuse) as scope:
         with tf.variable_scope('en_fc_1'):
-            en_fc_1 = tf.nn.relu(fully_connect(x, input_dims, hidden))
+            en_fc_1 = tf.nn.softplus(fully_connect(x, input_dims, hidden))
         with tf.variable_scope('en_fc_2'):
-            en_fc_2 = tf.nn.relu(fully_connect(en_fc_1, hidden, hidden))
+            en_fc_2 = tf.nn.softplus(fully_connect(en_fc_1, hidden, hidden))
         with tf.variable_scope('en_fc_3_mean'):
             en_fc_3_mean = fully_connect(en_fc_2, hidden, latent_dims)
         with tf.variable_scope('en_fc_3_log_sigma'):
@@ -96,9 +96,9 @@ def encoder(x, input_dims, latent_dims, reuse=False):
 def decoder(x, input_dims, output_dims, reuse=False):
     with tf.variable_scope('decoder', reuse=reuse) as scope:
         with tf.variable_scope('de_fc_1'):
-            de_fc_1 = tf.nn.relu(fully_connect(x, input_dims, hidden))
+            de_fc_1 = tf.nn.softplus(fully_connect(x, input_dims, hidden))
         with tf.variable_scope('de_fc_2'):
-            de_fc_2 = tf.nn.relu(fully_connect(de_fc_1, hidden, hidden))
+            de_fc_2 = tf.nn.softplus(fully_connect(de_fc_1, hidden, hidden))
         with tf.variable_scope('de_fc_3'):
             de_fc_3 = tf.nn.sigmoid(fully_connect(de_fc_2, hidden, output_dims))
         return de_fc_3
@@ -120,6 +120,7 @@ def encoder_z_decoder(x, input_dims, latent_dims, output_dims, reuse=False):
         # eps_initializer = tf.random_normal_initializer(mean=0.0, stddev=1)
         # eps = tf.get_variable('eps', (x.get_shape().as_list()[0], latent_dims), initializer=eps_initializer)
         z = tf.add(z_mean, tf.mul(tf.sqrt(tf.exp(z_log_sigma_sq)), eps))
+        # z = tf.Print(z, [tf.reduce_sum(z)], 'z = ', summarize=20, first_n=7)
         d1 = decoder(z, latent_dims, output_dims)
         return d1, z_mean, z_log_sigma_sq
 
