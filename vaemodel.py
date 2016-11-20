@@ -122,7 +122,7 @@ def encoder_z_decoder(x, input_dims, latent_dims, output_dims, reuse=False):
         z = tf.add(z_mean, tf.mul(tf.sqrt(tf.exp(z_log_sigma_sq)), eps))
         # z = tf.Print(z, [tf.reduce_sum(z)], 'z = ', summarize=20, first_n=7)
         d1 = decoder(z, latent_dims, output_dims)
-        return d1, z_mean, z_log_sigma_sq
+        return d1, z_mean, z_log_sigma_sq, z
 
 
 def discriminator(x, reuse=False):

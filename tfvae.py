@@ -10,11 +10,15 @@ import tensorflow as tf
 from tensorflow.python.client import device_lib
 import vaemodel
 from skimage import io, exposure
+import matplotlib.pyplot as plt
+import matplotlib.patches as mpatches
+# matplotlib.use('Agg')
 
 os.environ["CUDA_VISIBLE_DEVICES"] = "0, 1, 2, 3"
 print device_lib.list_local_devices()
 
 tf.app.flags.DEFINE_string("train_image_dir", "train_images", "")
+tf.app.flags.DEFINE_string("test_image_dir", "test_images", "")
 tf.app.flags.DEFINE_string("model_dir", "model", "")
 tf.app.flags.DEFINE_integer("max_epoch", 1000, "")
 tf.app.flags.DEFINE_integer("num_trains_per_epoch", 1, "")
@@ -22,7 +26,7 @@ tf.app.flags.DEFINE_integer("batchsize", 100, "")
 tf.app.flags.DEFINE_integer("n_steps_to_optimize_dis", 1, "")
 tf.app.flags.DEFINE_integer("ndim_y", 10, "")
 tf.app.flags.DEFINE_integer("ndim_x", 28 * 28, "")
-tf.app.flags.DEFINE_integer("ndim_z", 20, "")
+tf.app.flags.DEFINE_integer("ndim_z", 2, "")
 tf.app.flags.DEFINE_integer("gpu_enabled", 0, "")
 
 FLAGS = tf.app.flags.FLAGS
@@ -38,8 +42,8 @@ def get_image(path, epochs, shuffle=False):
         join(path, f)) & f.lower().endswith('bmp')]
     filename_queue = tf.train.string_input_producer(
         filenames, num_epochs=epochs, shuffle=shuffle)
-    # reader = tf.WholeFileReader()
-    reader = tf.FixedLengthRecordReader(record_bytes=1862)
+    reader = tf.WholeFileReader()
+    # reader = tf.FixedLengthRecordReader(record_bytes=1862)
     img_key, img_bytes = reader.read(filename_queue)
     # image = tf.image.decode_jpeg(img_bytes, channels=3)
     image = tf.to_float(tf.decode_raw(img_bytes, tf.uint8)) / 255.0
@@ -89,9 +93,10 @@ def train_autoencoder():
     batchsize = FLAGS.batchsize
     input_image, _ = get_image(image_paths, 75, True)
     input_images = tf.train.batch([input_image], batchsize, dynamic_pad=True)
+    # input_images, img_keys = tf.train.batch((input_image, img_key), batchsize, dynamic_pad=True)
     size = 784
 
-    reconst, z_mean, z_log_sigma_sq = vaemodel.encoder_z_decoder(input_images, size, ndim_z, size)
+    reconst, z_mean, z_log_sigma_sq, z = vaemodel.encoder_z_decoder(input_images, size, ndim_z, size)
     reconst_img = tf.reshape(reconst, tf.shape(input_images)) * 255.0
     flat_input = tf.to_float(tf.reshape(input_images, [batchsize, -1]))
     # rec_loss = tf.nn.l2_loss(flat_input - reconst) / tf.to_float(size * batchsize)
@@ -156,9 +161,88 @@ def train_autoencoder():
                 print('Done training -- epoch limit reached')
             finally:
                 coord.request_stop()
+                coord.join(threads)
 
+
+def test_autoencoder():
+    image_paths = FLAGS.test_image_dir
+    batchsize = 100
+    input_image, img_key = get_image(image_paths, 1, False)
+    input_images, img_keys = tf.train.batch((input_image, img_key), batchsize, dynamic_pad=True)
+    # img_keys = tf.train.batch([img_key], batchsize, dynamic_pad=True)
+    size = 784
+    ndim_z = FLAGS.ndim_z
+    collect_z = np.empty((1, 2))
+    collect_label = []
+    reconst, z_mean, z_log_sigma_sq, z = vaemodel.encoder_z_decoder(input_images, size, ndim_z, size)
+    reconst_img = tf.reshape(reconst, tf.shape(input_images)) * 255.0
+
+    with tf.Session() as sess:
+        sess.run(tf.initialize_all_variables())
+        sess.run(tf.initialize_local_variables())
+        file = tf.train.latest_checkpoint(FLAGS.model_dir)
+        if not file:
+            print('Could not find trained model in {}'.format(FLAGS.model_dir))
+            return
+        print('Using model from {}'.format(file))
+        saver = tf.train.Saver()
+        saver.restore(sess, file)
+        coord = tf.train.Coordinator()
+        threads = tf.train.start_queue_runners(coord=coord)
+        start_time = time.time()
+        try:
+            for step in xrange(1000000):
+                if coord.should_stop():
+                    break
+                print(step)
+                output_t, latent, output_n = sess.run([reconst_img, z, img_keys])
+                collect_z = np.r_[collect_z, latent]
+
+                elapsed = time.time() - start_time
+                start_time = time.time()
+                print('Time for one batch: {}'.format(elapsed))
+                for i, raw_image in enumerate(output_t):
+                    filepath = output_n[i]
+                    filename = filepath[filepath.find("/") + 1:filepath.find(".")]
+                    label = filename[0]
+                    collect_label.append(int(label[0]))
+                    io.imsave('test/%s_%s.png' % ('rec', filename), np.reshape(raw_image.astype("uint8"), (28, 28)))
+        except tf.errors.OutOfRangeError:
+            print('Done training -- epoch limit reached')
+        finally:
+            coord.request_stop()
             coord.join(threads)
+    return collect_z, collect_label
+
+
+def plot_labeled_z(collect_z, collect_label, dir=None, filename="labeled_z"):
+    fig = plt.gcf()
+    fig.set_size_inches(20.0, 16.0)
+    plt.clf()
+    colors = ["#2103c8", "#0e960e", "#e40402", "#05aaa8", "#ac02ab", "#aba808", "#151515", "#94a169", "#bec9cd", "#6a6551"]
+    for n in range(1, collect_z.shape[0] - 1):
+        plt.scatter(collect_z[n, 0], collect_z[n, 1], c=colors[collect_label[n]], s=40, marker="o", edgecolors='none')
+    classes = ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]
+    recs = []
+    for i in range(0, len(colors)):
+        recs.append(mpatches.Rectangle((0, 0), 1, 1, fc=colors[i]))
+
+    ax = plt.subplot(111)
+    box = ax.get_position()
+    ax.set_position([box.x0, box.y0, box.width * 0.8, box.height])
+    ax.legend(recs, classes, loc="center left", bbox_to_anchor=(1.1, 0.5))
+    plt.xticks(np.arange(-4, 5))
+    plt.yticks(np.arange(-4, 5))
+    plt.xlabel("z1")
+    plt.ylabel("z2")
+    plt.savefig("{}/{}.png".format(dir, filename))
+
+
+def main():
+    collect_z, collect_label = test_autoencoder()
+    plot_labeled_z(collect_z, collect_label, dir='.', filename="labeled_z")
 
 
 if __name__ == '__main__':
-    train_autoencoder()
+    # train_autoencoder()
+    main()

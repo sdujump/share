@@ -5,9 +5,9 @@ from os import listdir
 from os.path import isfile, join
 from tensorflow.python.client import device_lib
 import numpy as np
-import tfvae
+from skimage import io, exposure
 
-os.environ["CUDA_VISIBLE_DEVICES"] = "1"
+os.environ["CUDA_VISIBLE_DEVICES"] = "0, 1, 2, 3"
 print device_lib.list_local_devices()
 
 
@@ -23,8 +23,8 @@ def get_image(path, epochs, shuffle=False, crop=True):
         join(path, f)) & f.lower().endswith('bmp')]
     filename_queue = tf.train.string_input_producer(
         filenames, num_epochs=epochs, shuffle=shuffle)
-    # reader = tf.WholeFileReader()
-    reader = tf.FixedLengthRecordReader(record_bytes=1862)
+    reader = tf.WholeFileReader()
+    # reader = tf.FixedLengthRecordReader(record_bytes=1862)
     img_key, img_bytes = reader.read(filename_queue)
     # image = tf.image.decode_jpeg(img_bytes, channels=3)
     image = tf.decode_raw(img_bytes, tf.uint8)
@@ -41,6 +41,7 @@ def show_variables(variales):
 def main(argv=None):
 
     content_paths = FLAGS.TRAIN_IMAGES_PATH
+    '''
     beta = tf.get_variable('beta', initializer=tf.zeros_initializer([10]))
     alpha = tf.Variable(tf.zeros([10]), name='alpha')
 
@@ -49,10 +50,9 @@ def main(argv=None):
         bbb, aaa = tess.run([beta, alpha])
         print bbb
         print aaa
-
+    '''
     input_image, img_key = get_image(content_paths, 1, False)
-    input_images = tf.train.batch([input_image], 1, dynamic_pad=True)
-    img_keys = tf.train.batch([img_key], 1, dynamic_pad=True)
+    input_images, img_keys = tf.train.batch((input_image, img_key), 2, dynamic_pad=True)
 
     with tf.Session() as sess:
 
@@ -63,8 +63,11 @@ def main(argv=None):
         threads = tf.train.start_queue_runners(coord=coord)
         try:
             while not coord.should_stop():
-                aaa, bbb = sess.run([input_images, img_keys])
-                misc.imsave('111.png', tf.squeeze(aaa).eval())
+                output_t, output_n = sess.run([input_images, img_keys])
+                for i, raw_image in enumerate(output_t):
+                    filepath = output_n[i]
+                    filename = filepath[filepath.find("/") + 1:filepath.find(".")]
+                    io.imsave('test/%s_%s.png' % ('rec', filename), np.reshape(raw_image.astype("uint8"), (28, 28)))
         except tf.errors.OutOfRangeError:
             print('Done training -- epoch limit reached')
         finally:
