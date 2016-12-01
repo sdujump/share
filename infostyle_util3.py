@@ -21,7 +21,32 @@ def generator(z, reuse=False):
         zP = slim.fully_connected(z, 4 * 4 * 256, normalizer_fn=slim.batch_norm,
                                   activation_fn=tf.nn.relu, scope='g_project', weights_initializer=initializer)
         zCon = tf.reshape(zP, [-1, 4, 4, 256])
+        gen1 = slim.convolution2d_transpose(
+            zCon, num_outputs=32, kernel_size=[3, 3], stride=2,
+            padding="SAME", normalizer_fn=slim.batch_norm,
+            activation_fn=tf.nn.relu, scope='g_conv1')
 
+        gen2 = slim.convolution2d_transpose(
+            gen1, num_outputs=16, kernel_size=[3, 3], stride=2,
+            padding="SAME", normalizer_fn=slim.batch_norm,
+            activation_fn=tf.nn.relu, scope='g_conv2')
+
+        gen3 = slim.convolution2d_transpose(
+            gen2, num_outputs=8, kernel_size=[3, 3], stride=2,
+            padding="SAME", normalizer_fn=slim.batch_norm,
+            activation_fn=tf.nn.relu, scope='g_conv3')
+        '''
+        gen4 = slim.convolution2d_transpose(
+            gen3, num_outputs=3, kernel_size=[3, 3], stride=1,
+            padding="SAME", normalizer_fn=slim.batch_norm,
+            activation_fn=tf.nn.relu, scope='g_conv4')
+        '''
+        g_out = slim.convolution2d_transpose(
+            gen3, num_outputs=1, kernel_size=[32, 32], stride=1,
+            padding="SAME", biases_initializer=None, activation_fn=tf.nn.tanh, scope='g_out')
+
+        g_out_concat = tf.concat(3, [g_out, g_out, g_out], name='concat')
+        '''
         gen1 = slim.convolution2d(
             zCon, num_outputs=128, kernel_size=[3, 3],
             padding="SAME", normalizer_fn=slim.batch_norm,
@@ -46,7 +71,7 @@ def generator(z, reuse=False):
             scope='g_out', weights_initializer=initializer)
 
         g_out_concat = tf.concat(3, [g_out, g_out, g_out], name='concat')
-
+        '''
         return g_out_concat
 
 
