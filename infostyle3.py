@@ -83,11 +83,11 @@ for i in xrange(num_gpus):
 
                 # Combine losses for each of the categorical variables.
                 cat_losses = []
-                cat_loss = -tf.reduce_sum(z_lat[:, 0:categorical_list] * tf.log(QgCat[0]), reduction_indices=1)
+                cat_loss = -tf.reduce_sum(z_lat[i * batch_size:(i + 1) * batch_size, 0:categorical_list] * tf.log(QgCat[0]), reduction_indices=1)
                 cat_losses.append(cat_loss)
 
                 # Combine losses for each of the continous variables.
-                q_cont_loss = tf.reduce_sum(0.5 * tf.square(z_lat[:, categorical_list + z_size:] - QgCont), reduction_indices=1)
+                q_cont_loss = tf.reduce_sum(0.5 * tf.square(z_lat[i * batch_size:(i + 1) * batch_size, categorical_list + z_size:] - QgCont), reduction_indices=1)
 
                 q_cont_loss = tf.reduce_mean(q_cont_loss)
                 q_cat_loss = tf.reduce_mean(cat_losses)
