@@ -148,10 +148,7 @@ def train_infogan():
                 latent_oh[np.arange(batch_size), lcat] = 1
 
                 # Concatenate all c and z variables.
-                z_lats = [latent_oh]
-                z_lats.append(zs)
-                z_lats.append(lcont)
-                zlat = np.concat(1, z_lats)
+                zlat = np.concatenate([latent_oh, zs, lcont], 1)
 
                 # Draw a sample batch from MNIST dataset.
                 xs, _ = iter_.next()
@@ -179,10 +176,8 @@ def train_infogan():
                     latent_oh[np.arange(batch_size), lcat] = 1
 
                     # Concatenate all c and z variables.
-                    z_lats = [latent_oh]
-                    z_lats.append(zs)
-                    z_lats.append(lcont)
-                    zlat = np.concat(1, z_lats)
+                    zlat = np.concatenate([latent_oh, zs, lcont], 1)
+
                     # Use new z to get sample images from generator.
                     samples = sess.run(Gz, feed_dict={z_lat: zlat})
                     if not os.path.exists(sample_directory):
@@ -224,10 +219,8 @@ def test_infogan():
         latent_oh[np.arange(batch_size), lcat] = 1
 
         # Concatenate all c and z variables.
-        z_lats = [latent_oh]
-        z_lats.append(zs)
-        z_lats.append(lcont)
-        zlat = tf.concat(1, z_lats)
+        zlat = np.concatenate([latent_oh, zs, lcont], 1)
+
         # Use new z to get sample images from generator.
         samples = sess.run(Gz, feed_dict={z_lat: zlat})
         if not os.path.exists(sample_directory):
@@ -239,5 +232,3 @@ def test_infogan():
 if __name__ == '__main__':
     train_infogan()
     # test_infogan()
-
-
