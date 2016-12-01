@@ -176,9 +176,9 @@ def train_infogan():
 
                     # Concatenate all c and z variables.
                     zlat = np.concatenate([latent_oh, zs, lcont], 1)
-
+                    GGz = infostyle_util.generator(zlat)
                     # Use new z to get sample images from generator.
-                    samples = sess.run(Gz, feed_dict={z_lat: zlat})
+                    samples = sess.run(GGz, feed_dict={z_lat: zlat})
                     if not os.path.exists(sample_directory):
                         os.makedirs(sample_directory)
                     # Save sample generator images for viewing training
