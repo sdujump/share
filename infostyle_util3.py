@@ -24,17 +24,17 @@ def generator(z, reuse=False):
         gen1 = slim.convolution2d_transpose(
             zCon, num_outputs=32, kernel_size=[3, 3], stride=2,
             padding="SAME", normalizer_fn=slim.batch_norm,
-            activation_fn=tf.nn.relu, scope='g_conv1')
+            activation_fn=tf.nn.relu, scope='g_conv1', weights_initializer=initializer)
 
         gen2 = slim.convolution2d_transpose(
             gen1, num_outputs=16, kernel_size=[3, 3], stride=2,
             padding="SAME", normalizer_fn=slim.batch_norm,
-            activation_fn=tf.nn.relu, scope='g_conv2')
+            activation_fn=tf.nn.relu, scope='g_conv2', weights_initializer=initializer)
 
         gen3 = slim.convolution2d_transpose(
             gen2, num_outputs=8, kernel_size=[3, 3], stride=2,
             padding="SAME", normalizer_fn=slim.batch_norm,
-            activation_fn=tf.nn.relu, scope='g_conv3')
+            activation_fn=tf.nn.relu, scope='g_conv3', weights_initializer=initializer)
         '''
         gen4 = slim.convolution2d_transpose(
             gen3, num_outputs=3, kernel_size=[3, 3], stride=1,
@@ -43,7 +43,7 @@ def generator(z, reuse=False):
         '''
         g_out = slim.convolution2d_transpose(
             gen3, num_outputs=1, kernel_size=[32, 32], stride=1,
-            padding="SAME", biases_initializer=None, activation_fn=tf.nn.tanh, scope='g_out')
+            padding="SAME", biases_initializer=None, activation_fn=tf.nn.tanh, scope='g_out', weights_initializer=initializer)
 
         g_out_concat = tf.concat(3, [g_out, g_out, g_out], name='concat')
 
@@ -52,7 +52,7 @@ def generator(z, reuse=False):
 
 def discriminator(bottom, cat_list, conts, reuse=False):
     with tf.variable_scope('discriminator', reuse=reuse):
-
+        '''
         dis1 = slim.convolution2d(bottom, 128, [3, 3], padding="SAME", stride=2,
                                   biases_initializer=None, activation_fn=lrelu,
                                   reuse=reuse, scope='d_conv1')
@@ -74,23 +74,20 @@ def discriminator(bottom, cat_list, conts, reuse=False):
         q_a = slim.fully_connected(dis4, 128, normalizer_fn=slim.batch_norm,
                                    reuse=reuse, scope='q_fc1')
 
+        '''
         initializer = tf.truncated_normal_initializer(stddev=0.02)
 
-        '''
-        dis1 = slim.convolution2d(bottom, 32, [3, 3], padding="SAME",
+        dis1 = slim.convolution2d(bottom, 128, [3, 3], padding="SAME",
                                   biases_initializer=None, activation_fn=lrelu,
                                   reuse=reuse, scope='d_conv1', weights_initializer=initializer)
-        dis1 = tf.space_to_depth(dis1, 2)
 
-        dis2 = slim.convolution2d(dis1, 64, [3, 3], padding="SAME",
+        dis2 = slim.convolution2d(dis1, 256, [3, 3], padding="SAME",
                                   normalizer_fn=slim.batch_norm, activation_fn=lrelu,
                                   reuse=reuse, scope='d_conv2', weights_initializer=initializer)
-        dis2 = tf.space_to_depth(dis2, 2)
 
-        dis3 = slim.convolution2d(dis2, 128, [3, 3], padding="SAME",
+        dis3 = slim.convolution2d(dis2, 512, [3, 3], padding="SAME",
                                   normalizer_fn=slim.batch_norm, activation_fn=lrelu,
                                   reuse=reuse, scope='d_conv3', weights_initializer=initializer)
-        dis3 = tf.space_to_depth(dis3, 2)
 
         dis4 = slim.fully_connected(slim.flatten(dis3), 1024, activation_fn=lrelu,
                                     reuse=reuse, scope='d_fc1', weights_initializer=initializer)
@@ -101,7 +98,6 @@ def discriminator(bottom, cat_list, conts, reuse=False):
         q_a = slim.fully_connected(dis4, 128, normalizer_fn=slim.batch_norm,
                                    reuse=reuse, scope='q_fc1', weights_initializer=initializer)
 
-        '''
         # Here we define the unique layers used for the q-network. The number of outputs depends on the number of
         # latent variables we choose to define.
         q_cat_outs = []
