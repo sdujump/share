@@ -38,6 +38,7 @@ def show_variables(variales):
 
 tf.reset_default_graph()
 
+num_gpus = 4
 z_size = 64  # Size of initial z vector used for generator.
 image_size = 64
 # Define latent variables.
@@ -68,51 +69,72 @@ z_lats.append(latent_cont_in)
 z_lat = tf.concat(1, z_lats)
 
 
-Gz = infostyle_util.generator(z_lat)  # Generates images from random z vectors
-# Produces probabilities for real images
-Dx, _, _ = infostyle_util.discriminator(real_in)
-# Produces probabilities for generator images
-Dg, QgCat, QgCont = infostyle_util.discriminator(Gz, reuse=True)
-
-# These functions together define the optimization objective of the GAN.
-# This optimizes the discriminator.
-d_loss = -tf.reduce_mean(tf.log(Dx) + tf.log(1. - Dg))
-g_loss = -tf.reduce_mean(tf.log((Dg / (1 - Dg))))  # KL Divergence optimizer
-
-# Combine losses for each of the categorical variables.
-cat_losses = []
-cat_loss = -tf.reduce_sum(oh_list[0] * tf.log(QgCat[0]), reduction_indices=1)
-cat_losses.append(cat_loss)
-
-# Combine losses for each of the continous variables.
-if number_continuous > 0:
-    q_cont_loss = tf.reduce_sum(
-        0.5 * tf.square(latent_cont_in - QgCont), reduction_indices=1)
-else:
-    q_cont_loss = tf.constant(0.0)
-
-q_cont_loss = tf.reduce_mean(q_cont_loss)
-q_cat_loss = tf.reduce_mean(cat_losses)
-q_loss = tf.add(q_cat_loss, q_cont_loss)
-tvars = tf.trainable_variables()
-
-gen_vars = [v for v in tvars if v.name.startswith("generator/")]
-dis_vars = [v for v in tvars if v.name.startswith("discriminator/")]
-
 # The below code is responsible for applying gradient descent to update
 # the GAN.
 trainerD = tf.train.AdamOptimizer(learning_rate=0.0002, beta1=0.5)
 trainerG = tf.train.AdamOptimizer(learning_rate=0.002, beta1=0.5)
 trainerQ = tf.train.AdamOptimizer(learning_rate=0.0002, beta1=0.5)
-# Only update the weights for the discriminator network.
-d_grads = trainerD.compute_gradients(d_loss, dis_vars)
-# Only update the weights for the generator network.
-g_grads = trainerG.compute_gradients(g_loss, gen_vars)
-q_grads = trainerG.compute_gradients(q_loss, tvars)
 
-update_D = trainerD.apply_gradients(d_grads)
-update_G = trainerG.apply_gradients(g_grads)
-update_Q = trainerQ.apply_gradients(q_grads)
+tower_grads_D = []
+tower_grads_G = []
+tower_grads_Q = []
+
+
+for i in xrange(num_gpus):
+        with tf.device('/gpu:%d' % i):
+            with tf.name_scope('Tower_%d' % (i)) as scope:
+
+                Gz = infostyle_util.generator(z_lat)  # Generates images from random z vectors
+                # Produces probabilities for real images
+                Dx, _, _ = infostyle_util.discriminator(real_in)
+                # Produces probabilities for generator images
+                Dg, QgCat, QgCont = infostyle_util.discriminator(Gz, reuse=True)
+
+                # These functions together define the optimization objective of the GAN.
+                # This optimizes the discriminator.
+                d_loss = -tf.reduce_mean(tf.log(Dx) + tf.log(1. - Dg))
+                g_loss = -tf.reduce_mean(tf.log((Dg / (1 - Dg))))  # KL Divergence optimizer
+
+                # Combine losses for each of the categorical variables.
+                cat_losses = []
+                cat_loss = -tf.reduce_sum(oh_list[0] * tf.log(QgCat[0]), reduction_indices=1)
+                cat_losses.append(cat_loss)
+
+                # Combine losses for each of the continous variables.
+                if number_continuous > 0:
+                    q_cont_loss = tf.reduce_sum(
+                        0.5 * tf.square(latent_cont_in - QgCont), reduction_indices=1)
+                else:
+                    q_cont_loss = tf.constant(0.0)
+
+                q_cont_loss = tf.reduce_mean(q_cont_loss)
+                q_cat_loss = tf.reduce_mean(cat_losses)
+                q_loss = tf.add(q_cat_loss, q_cont_loss)
+                tvars = tf.trainable_variables()
+
+                gen_vars = [v for v in tvars if v.name.startswith("generator/")]
+                dis_vars = [v for v in tvars if v.name.startswith("discriminator/")]
+
+                # Only update the weights for the discriminator network.
+                d_grads = trainerD.compute_gradients(d_loss, dis_vars)
+                # Only update the weights for the generator network.
+                g_grads = trainerG.compute_gradients(g_loss, gen_vars)
+                q_grads = trainerG.compute_gradients(q_loss, tvars)
+
+                # Keep track of the gradients across all towers.
+                tower_grads_D.append(d_grads)
+                tower_grads_G.append(g_grads)
+                tower_grads_Q.append(q_grads)
+
+
+# Average the gradients
+grads_d = infostyle_util.average_gradients(tower_grads_D)
+grads_g = infostyle_util.average_gradients(tower_grads_G)
+grads_q = infostyle_util.average_gradients(tower_grads_Q)
+
+update_D = trainerD.apply_gradients(grads_d)
+update_G = trainerG.apply_gradients(grads_g)
+update_Q = trainerQ.apply_gradients(grads_q)
 
 
 def train_infogan():
