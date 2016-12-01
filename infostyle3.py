@@ -70,9 +70,9 @@ for i in xrange(num_gpus):
         with tf.device('/gpu:%d' % i):
             with tf.name_scope('Tower_%d' % (i)) as scope:
 
-                Gz = infostyle_util.generator(z_lat)  # Generates images from random z vectors
+                Gz = infostyle_util.generator(z_lat[i * batch_size:(i + 1) * batch_size, :])  # Generates images from random z vectors
                 # Produces probabilities for real images
-                Dx, _, _ = infostyle_util.discriminator(real_in)
+                Dx, _, _ = infostyle_util.discriminator(real_in[i * batch_size:(i + 1) * batch_size, :])
                 # Produces probabilities for generator images
                 Dg, QgCat, QgCont = infostyle_util.discriminator(Gz, reuse=True)
 
@@ -125,7 +125,7 @@ def train_infogan():
     num_examples = 60000
     epoch = 0
     num_epochs = 50  # Total number of iterations to use.
-    total_batch = int(np.floor(num_examples / batch_size))
+    total_batch = int(np.floor(num_examples / (batch_size * num_gpus)))
     # Directory to save sample images from generator in.
     sample_directory = './figsTut'
     model_directory = './models'  # Directory to save trained model to.
@@ -136,15 +136,15 @@ def train_infogan():
     with tf.Session(config=config) as sess:
         sess.run(init)
         while epoch < num_epochs:
-            iter_ = infostyle_util.data_iterator(images, filenames, batch_size)
+            iter_ = infostyle_util.data_iterator(images, filenames, batch_size * num_gpus)
             for i in tqdm.tqdm(range(total_batch)):
                 # Generate a random z batch
-                zs = np.random.uniform(-1.0, 1.0, size=[batch_size, z_size]).astype(np.float32)
-                lcont = np.random.uniform(-1, 1, [batch_size, number_continuous])
+                zs = np.random.uniform(-1.0, 1.0, size=[batch_size * num_gpus, z_size]).astype(np.float32)
+                lcont = np.random.uniform(-1, 1, [batch_size * num_gpus, number_continuous])
 
-                lcat = np.random.randint(0, 10, [batch_size])  # Generate random c batch
-                latent_oh = np.zeros((batch_size, 10))
-                latent_oh[np.arange(batch_size), lcat] = 1
+                lcat = np.random.randint(0, 10, [batch_size * num_gpus])  # Generate random c batch
+                latent_oh = np.zeros((batch_size * num_gpus, 10))
+                latent_oh[np.arange(batch_size * num_gpus), lcat] = 1
 
                 # Concatenate all c and z variables.
                 zlat = np.concatenate([latent_oh, zs, lcont], 1)
@@ -153,7 +153,7 @@ def train_infogan():
                 xs, _ = iter_.next()
                 # xs, _ = mnist.train.next_batch(batch_size)
                 # Transform it to be between -1 and 1
-                xs = (np.reshape(xs, [batch_size, image_size, image_size, 3]) / 255.0 - 0.5) * 2.0
+                xs = (np.reshape(xs, [batch_size * num_gpus, image_size, image_size, 3]) / 255.0 - 0.5) * 2.0
                 # xs = np.lib.pad(xs, ((0, 0), (2, 2), (2, 2), (0, 0)), 'constant', constant_values=(-1, -1))  # Pad the images so the are 32x32
 
                 _, dLoss = sess.run([update_D, d_loss], feed_dict={z_lat: zlat, real_in: xs})  # Update the discriminator
@@ -183,7 +183,7 @@ def train_infogan():
                         os.makedirs(sample_directory)
                     # Save sample generator images for viewing training
                     # progress.
-                    infostyle_util.save_images(np.reshape(samples[0:100], [100, image_size, image_size, 3]), [10, 10], sample_directory + '/fig' + str(epoch) + str(i) + '.png')
+                    infostyle_util.save_images(np.reshape(samples[0:100], [batch_size, image_size, image_size, 3]), [10, 10], sample_directory + '/fig' + str(epoch) + str(i) + '.png')
             epoch += 1
             if not os.path.exists(model_directory):
                 os.makedirs(model_directory)
