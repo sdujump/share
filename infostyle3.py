@@ -11,8 +11,6 @@ import infostyle_util3 as infostyle_util
 import h5py  # for reading our dataset
 from tensorflow.python.client import device_lib
 import tqdm  # making loops prettier
-import infogan_util
-
 
 os.environ["CUDA_VISIBLE_DEVICES"] = "0, 1, 2, 3"
 print device_lib.list_local_devices()
@@ -71,11 +69,11 @@ z_lats.append(latent_cont_in)
 z_lat = tf.concat(1, z_lats)
 
 
-Gz = infogan_util.generator(z_lat)  # Generates images from random z vectors
+Gz = infostyle_util.generator(z_lat)  # Generates images from random z vectors
 # Produces probabilities for real images
-Dx, _, _ = infogan_util.discriminator(real_in, categorical_list, number_continuous)
+Dx, _, _ = infostyle_util.discriminator(real_in, categorical_list, number_continuous)
 # Produces probabilities for generator images
-Dg, QgCat, QgCont = infogan_util.discriminator(Gz, categorical_list, number_continuous, reuse=True)
+Dg, QgCat, QgCont = infostyle_util.discriminator(Gz, categorical_list, number_continuous, reuse=True)
 
 # These functions together define the optimization objective of the GAN.
 # This optimizes the discriminator.
