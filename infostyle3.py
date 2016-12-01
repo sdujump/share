@@ -23,7 +23,7 @@ FLAGS = tf.app.flags.FLAGS
 
 
 batch_size = FLAGS.batch_size
-with h5py.File(''.join(['datasets/dataset-rgb.h5']), 'r') as hf:
+with h5py.File(''.join(['datasets/dataset-rgb-32.h5']), 'r') as hf:
     images = hf['images'].value
     filenames = hf['filenames'].value
 
@@ -39,7 +39,7 @@ def show_variables(variales):
 tf.reset_default_graph()
 
 z_size = 64  # Size of initial z vector used for generator.
-
+image_size = 64
 # Define latent variables.
 # Each entry in this list defines a categorical variable of a specific size.
 categorical_list = [10]
@@ -50,7 +50,7 @@ initializer = tf.truncated_normal_initializer(stddev=0.02)
 
 # These placeholders are used for input into the generator and discriminator, respectively.
 z_in = tf.placeholder(shape=[None, z_size], dtype=tf.float32)  # Random vector
-real_in = tf.placeholder(shape=[None, 32, 32, 3], dtype=tf.float32)  # Real images
+real_in = tf.placeholder(shape=[None, image_size, image_size, 3], dtype=tf.float32)  # Real images
 
 # These placeholders load the latent variables.
 latent_cat_in = tf.placeholder(shape=[None, 1], dtype=tf.int32)
@@ -140,9 +140,8 @@ def train_infogan():
                 xs, _ = iter_.next()
                 # xs, _ = mnist.train.next_batch(batch_size)
                 # Transform it to be between -1 and 1
-                xs = (np.reshape(xs, [batch_size, 28, 28, 3]) / 255.0 - 0.5) * 2.0
-                xs = np.lib.pad(xs, ((0, 0), (2, 2), (2, 2), (0, 0)), 'constant',
-                                constant_values=(-1, -1))  # Pad the images so the are 32x32
+                xs = (np.reshape(xs, [batch_size, image_size, image_size, 3]) / 255.0 - 0.5) * 2.0
+                # xs = np.lib.pad(xs, ((0, 0), (2, 2), (2, 2), (0, 0)), 'constant', constant_values=(-1, -1))  # Pad the images so the are 32x32
 
                 _, dLoss = sess.run([update_D, d_loss], feed_dict={z_in: zs, real_in: xs, latent_cat_in: lcat, latent_cont_in: lcont})  # Update the discriminator
                 # Update the generator, twice for good measure.
@@ -167,7 +166,7 @@ def train_infogan():
                         os.makedirs(sample_directory)
                     # Save sample generator images for viewing training
                     # progress.
-                    infostyle_util.save_images(np.reshape(samples[0:100], [100, 32, 32, 3]), [10, 10], sample_directory + '/fig' + str(epoch) + str(i) + '.png')
+                    infostyle_util.save_images(np.reshape(samples[0:100], [100, image_size, image_size, 3]), [10, 10], sample_directory + '/fig' + str(epoch) + str(i) + '.png')
             epoch += 1
             if not os.path.exists(model_directory):
                 os.makedirs(model_directory)
@@ -204,7 +203,7 @@ def test_infogan():
         if not os.path.exists(sample_directory):
             os.makedirs(sample_directory)
         # Save sample generator images for viewing training progress.
-        infostyle_util.save_images(np.reshape(samples[0:100], [100, 32, 32]), [10, 10], sample_directory + '/fig_test' + '.png')
+        infostyle_util.save_images(np.reshape(samples[0:100], [100, image_size, image_size]), [10, 10], sample_directory + '/fig_test' + '.png')
 
 
 if __name__ == '__main__':

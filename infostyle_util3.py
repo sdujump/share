@@ -49,6 +49,7 @@ def generator(z, reuse=False):
 
         return g_out_concat
 
+
 '''
 def discriminator(bottom, cat_list, conts, reuse=False):
     with tf.variable_scope('discriminator', reuse=reuse):
@@ -189,7 +190,7 @@ def get_dataset(path, dim, channel=3):
         image = get_image(filenames[i], dim, dim)
         images[i] = image.flatten()
         # get the metadata
-    with h5py.File(''.join(['datasets/dataset-rgb.h5']), 'w') as f:
+    with h5py.File(''.join(['datasets/dataset-rgb-32.h5']), 'w') as f:
         images = f.create_dataset("images", data=images)
         filenames = f.create_dataset('filenames', data=filenames)
     print("dataset loaded")
@@ -241,4 +242,4 @@ def gram(layer):
 
 
 if __name__ == '__main__':
-    get_dataset('./train_images/', 28)
+    get_dataset('./train_images/', 32)
