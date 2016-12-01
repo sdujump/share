@@ -71,9 +71,9 @@ z_lat = tf.concat(1, z_lats)
 
 Gz = infostyle_util.generator(z_lat)  # Generates images from random z vectors
 # Produces probabilities for real images
-Dx, _, _ = infostyle_util.discriminator(real_in, categorical_list, number_continuous)
+Dx, _, _ = infostyle_util.discriminator(real_in)
 # Produces probabilities for generator images
-Dg, QgCat, QgCont = infostyle_util.discriminator(Gz, categorical_list, number_continuous, reuse=True)
+Dg, QgCat, QgCont = infostyle_util.discriminator(Gz, reuse=True)
 
 # These functions together define the optimization objective of the GAN.
 # This optimizes the discriminator.

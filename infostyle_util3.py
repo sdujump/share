@@ -93,7 +93,7 @@ def discriminator(bottom, cat_list, conts, reuse=False):
 '''
 
 
-def discriminator(bottom, cat_list, conts, reuse=False):
+def discriminator(bottom, reuse=False):
     with tf.variable_scope('discriminator', reuse=reuse):
         initializer = tf.truncated_normal_initializer(stddev=0.02)
 
