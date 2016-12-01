@@ -141,18 +141,17 @@ def train_infogan():
             for i in tqdm.tqdm(range(total_batch)):
                 # Generate a random z batch
                 zs = np.random.uniform(-1.0, 1.0, size=[batch_size, z_size]).astype(np.float32)
-                lcat = np.random.randint(0, 10, [batch_size, 1])  # Generate random c batch
                 lcont = np.random.uniform(-1, 1, [batch_size, number_continuous])
 
-                oh_list = []
-                latent_oh = tf.one_hot(tf.reshape(lcat, [-1]), 10)
-                oh_list.append(latent_oh)
+                lcat = np.random.randint(0, 10, [batch_size])  # Generate random c batch
+                latent_oh = np.zeros((batch_size, 10))
+                latent_oh[np.arange(batch_size), lcat] = 1
 
                 # Concatenate all c and z variables.
-                z_lats = oh_list[:]
+                z_lats = [latent_oh]
                 z_lats.append(zs)
                 z_lats.append(lcont)
-                zlat = tf.concat(1, z_lats)
+                zlat = np.concat(1, z_lats)
 
                 # Draw a sample batch from MNIST dataset.
                 xs, _ = iter_.next()
@@ -175,15 +174,15 @@ def train_infogan():
                     cc = np.zeros_like(bb)
                     lcont = np.hstack([bb, cc])
 
-                    oh_list = []
-                    latent_oh = tf.one_hot(tf.reshape(lcat, [-1]), 10)
-                    oh_list.append(latent_oh)
+                    lcat = np.random.randint(0, 10, [batch_size])  # Generate random c batch
+                    latent_oh = np.zeros((batch_size, 10))
+                    latent_oh[np.arange(batch_size), lcat] = 1
 
                     # Concatenate all c and z variables.
-                    z_lats = oh_list[:]
+                    z_lats = [latent_oh]
                     z_lats.append(zs)
                     z_lats.append(lcont)
-                    zlat = tf.concat(1, z_lats)
+                    zlat = np.concat(1, z_lats)
                     # Use new z to get sample images from generator.
                     samples = sess.run(Gz, feed_dict={z_lat: zlat})
                     if not os.path.exists(sample_directory):
@@ -220,12 +219,12 @@ def test_infogan():
         cc = np.zeros_like(bb)
         lcont = np.hstack([bb, cc])
 
-        oh_list = []
-        latent_oh = tf.one_hot(tf.reshape(lcat, [-1]), 10)
-        oh_list.append(latent_oh)
+        lcat = np.random.randint(0, 10, [batch_size])  # Generate random c batch
+        latent_oh = np.zeros((batch_size, 10))
+        latent_oh[np.arange(batch_size), lcat] = 1
 
         # Concatenate all c and z variables.
-        z_lats = oh_list[:]
+        z_lats = [latent_oh]
         z_lats.append(zs)
         z_lats.append(lcont)
         zlat = tf.concat(1, z_lats)
