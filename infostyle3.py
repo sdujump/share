@@ -58,9 +58,8 @@ latent_cat_list = tf.split(1, 1, latent_cat_in)
 latent_cont_in = tf.placeholder(shape=[None, number_continuous], dtype=tf.float32)
 
 oh_list = []
-for idx, var in enumerate(categorical_list):
-    latent_oh = tf.one_hot(tf.reshape(latent_cat_list[idx], [-1]), var)
-    oh_list.append(latent_oh)
+latent_oh = tf.one_hot(tf.reshape(latent_cat_list[0], [-1]), 10)
+oh_list.append(latent_oh)
 
 # Concatenate all c and z variables.
 z_lats = oh_list[:]
