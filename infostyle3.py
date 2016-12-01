@@ -23,7 +23,7 @@ FLAGS = tf.app.flags.FLAGS
 
 
 batch_size = FLAGS.batch_size
-with h5py.File(''.join(['datasets/dataset-rgb-64.h5']), 'r') as hf:
+with h5py.File(''.join(['datasets/dataset-rgb-32.h5']), 'r') as hf:
     images = hf['images'].value
     filenames = hf['filenames'].value
 
@@ -40,7 +40,7 @@ tf.reset_default_graph()
 
 num_gpus = 4
 z_size = 64  # Size of initial z vector used for generator.
-image_size = 64
+image_size = 32
 # Define latent variables.
 # Each entry in this list defines a categorical variable of a specific size.
 categorical_list = [10]
