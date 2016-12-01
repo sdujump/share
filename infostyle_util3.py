@@ -41,11 +41,13 @@ def generator(z, reuse=False):
         gen3 = tf.depth_to_space(gen3, 2)
 
         g_out = slim.convolution2d(
-            gen3, num_outputs=3, kernel_size=[32, 32], padding="SAME",
+            gen3, num_outputs=1, kernel_size=[32, 32], padding="SAME",
             biases_initializer=None, activation_fn=tf.nn.tanh,
             scope='g_out', weights_initializer=initializer)
 
-        return g_out
+        g_out_concat = tf.concat(3, [g_out, g_out, g_out], name='concat')
+
+        return g_out_concat
 
 
 def discriminator(bottom, cat_list, conts, reuse=False):
