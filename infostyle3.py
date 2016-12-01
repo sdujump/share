@@ -53,8 +53,8 @@ z_in = tf.placeholder(shape=[None, z_size], dtype=tf.float32)  # Random vector
 real_in = tf.placeholder(shape=[None, 32, 32, 3], dtype=tf.float32)  # Real images
 
 # These placeholders load the latent variables.
-latent_cat_in = tf.placeholder(shape=[None, len(categorical_list)], dtype=tf.int32)
-latent_cat_list = tf.split(1, len(categorical_list), latent_cat_in)
+latent_cat_in = tf.placeholder(shape=[None, 1], dtype=tf.int32)
+latent_cat_list = tf.split(1, 1, latent_cat_in)
 latent_cont_in = tf.placeholder(shape=[None, number_continuous], dtype=tf.float32)
 
 oh_list = []
@@ -135,7 +135,7 @@ def train_infogan():
             for i in tqdm.tqdm(range(total_batch)):
                 # Generate a random z batch
                 zs = np.random.uniform(-1.0, 1.0, size=[batch_size, z_size]).astype(np.float32)
-                lcat = np.random.randint(0, 10, [batch_size, len(categorical_list)])  # Generate random c batch
+                lcat = np.random.randint(0, 10, [batch_size, 1])  # Generate random c batch
                 lcont = np.random.uniform(-1, 1, [batch_size, number_continuous])
 
                 # Draw a sample batch from MNIST dataset.
