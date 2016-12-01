@@ -124,7 +124,6 @@ update_Q = trainerQ.apply_gradients(grads_q)
 def train_infogan():
     num_examples = 60000
     epoch = 0
-    batch_size = 64  # Size of image batch to apply at each iteration.
     num_epochs = 50  # Total number of iterations to use.
     total_batch = int(np.floor(num_examples / batch_size))
     # Directory to save sample images from generator in.
@@ -164,10 +163,10 @@ def train_infogan():
                 if i % 100 == 0:
                     print "epoch: " + str(epoch) + " Gen Loss: " + str(gLoss) + " Disc Loss: " + str(dLoss) + " Q Losses: " + str([qK, qC])
                     # Generate another z batch
-                    zs = np.random.uniform(-1.0, 1.0, size=[100, z_size]).astype(np.float32)
-                    lcat = np.reshape(np.array([e for e in range(10) for tempi in range(10)]), [100, 1])
+                    zs = np.random.uniform(-1.0, 1.0, size=[batch_size, z_size]).astype(np.float32)
+                    lcat = np.reshape(np.array([e for e in range(10) for tempi in range(10)]), [batch_size, 1])
                     aa = np.reshape(np.array([[(e / 4.5 - 1.)] for e in range(10) for tempj in range(10)]), [10, 10]).T
-                    bb = np.reshape(aa, [100, 1])
+                    bb = np.reshape(aa, [batch_size, 1])
                     cc = np.zeros_like(bb)
                     lcont = np.hstack([bb, cc])
 
@@ -207,10 +206,10 @@ def test_infogan():
         saver.restore(sess, ckpt.model_checkpoint_path)
 
         # Generate another z batch
-        zs = np.random.uniform(-1.0, 1.0, size=[100, z_size]).astype(np.float32)
-        lcat = np.reshape(np.array([e for e in range(10) for tempi in range(10)]), [100, 1])
+        zs = np.random.uniform(-1.0, 1.0, size=[batch_size, z_size]).astype(np.float32)
+        lcat = np.reshape(np.array([e for e in range(10) for tempi in range(10)]), [batch_size, 1])
         aa = np.reshape(np.array([[(e / 4.5 - 1.)] for e in range(10) for tempj in range(10)]), [10, 10]).T
-        bb = np.reshape(aa, [100, 1])
+        bb = np.reshape(aa, [batch_size, 1])
         cc = np.zeros_like(bb)
         lcont = np.hstack([bb, cc])
 
@@ -226,7 +225,7 @@ def test_infogan():
         if not os.path.exists(sample_directory):
             os.makedirs(sample_directory)
         # Save sample generator images for viewing training progress.
-        infostyle_util.save_images(np.reshape(samples[0:100], [100, image_size, image_size]), [10, 10], sample_directory + '/fig_test' + '.png')
+        infostyle_util.save_images(np.reshape(samples[0:100], [batch_size, image_size, image_size]), [10, 10], sample_directory + '/fig_test' + '.png')
 
 
 if __name__ == '__main__':
