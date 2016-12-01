@@ -97,7 +97,9 @@ def discriminator(bottom, reuse=False):
     with tf.variable_scope('discriminator', reuse=reuse):
         initializer = tf.truncated_normal_initializer(stddev=0.02)
 
-        dis1 = slim.convolution2d(bottom, 32, [3, 3], padding="SAME",
+        x_net, _ = vgg.net('imagenet-vgg-verydeep-19.mat', bottom)
+
+        dis1 = slim.convolution2d(x_net['relu2_2'], 32, [3, 3], padding="SAME",
                                   biases_initializer=None, activation_fn=lrelu,
                                   reuse=reuse, scope='d_conv1', weights_initializer=initializer)
         dis1 = tf.space_to_depth(dis1, 2)
