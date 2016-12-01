@@ -77,15 +77,15 @@ def discriminator(bottom, cat_list, conts, reuse=False):
         '''
         initializer = tf.truncated_normal_initializer(stddev=0.02)
 
-        dis1 = slim.convolution2d(bottom, 128, [3, 3], padding="SAME",
+        dis1 = slim.convolution2d(bottom, 128, [3, 3], padding="SAME", stride=2,
                                   biases_initializer=None, activation_fn=lrelu,
                                   reuse=reuse, scope='d_conv1', weights_initializer=initializer)
 
-        dis2 = slim.convolution2d(dis1, 256, [3, 3], padding="SAME",
+        dis2 = slim.convolution2d(dis1, 256, [3, 3], padding="SAME", stride=2,
                                   normalizer_fn=slim.batch_norm, activation_fn=lrelu,
                                   reuse=reuse, scope='d_conv2', weights_initializer=initializer)
 
-        dis3 = slim.convolution2d(dis2, 512, [3, 3], padding="SAME",
+        dis3 = slim.convolution2d(dis2, 512, [3, 3], padding="SAME", stride=2,
                                   normalizer_fn=slim.batch_norm, activation_fn=lrelu,
                                   reuse=reuse, scope='d_conv3', weights_initializer=initializer)
 
