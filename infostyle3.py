@@ -84,9 +84,9 @@ for i in xrange(num_gpus):
         with tf.device('/gpu:%d' % i):
             with tf.name_scope('Tower_%d' % (i)) as scope:
 
-                Gz = infostyle_util.generator(z_lat)  # Generates images from random z vectors
+                Gz = infostyle_util.generator(z_lat, reuse=True)  # Generates images from random z vectors
                 # Produces probabilities for real images
-                Dx, _, _ = infostyle_util.discriminator(real_in)
+                Dx, _, _ = infostyle_util.discriminator(real_in, reuse=True)
                 # Produces probabilities for generator images
                 Dg, QgCat, QgCont = infostyle_util.discriminator(Gz, reuse=True)
 
