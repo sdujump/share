@@ -23,7 +23,7 @@ FLAGS = tf.app.flags.FLAGS
 
 
 batch_size = FLAGS.batch_size
-with h5py.File(''.join(['datasets/dataset-rgb-32.h5']), 'r') as hf:
+with h5py.File(''.join(['datasets/dataset-rgb-64.h5']), 'r') as hf:
     images = hf['images'].value
     filenames = hf['filenames'].value
 
