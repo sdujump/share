@@ -150,7 +150,9 @@ def train_infogan():
     model_directory = './models'  # Directory to save trained model to.
     init = tf.initialize_all_variables()
     saver = tf.train.Saver()
-    with tf.Session() as sess:
+
+    config = tf.ConfigProto(allow_soft_placement=True)
+    with tf.Session(config=config) as sess:
         sess.run(init)
         while epoch < num_epochs:
             iter_ = infostyle_util.data_iterator(images, filenames, batch_size)
