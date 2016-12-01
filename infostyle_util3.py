@@ -35,14 +35,14 @@ def generator(z, reuse=False):
             gen2, num_outputs=8, kernel_size=[3, 3], stride=2,
             padding="SAME", normalizer_fn=slim.batch_norm,
             activation_fn=tf.nn.relu, scope='g_conv3', weights_initializer=initializer)
-
+        '''
         gen4 = slim.convolution2d_transpose(
             gen3, num_outputs=3, kernel_size=[3, 3], stride=2,
             padding="SAME", normalizer_fn=slim.batch_norm,
             activation_fn=tf.nn.relu, scope='g_conv4', weights_initializer=initializer)
-
+        '''
         g_out = slim.convolution2d_transpose(
-            gen4, num_outputs=1, kernel_size=[32, 32], stride=1,
+            gen3, num_outputs=1, kernel_size=[32, 32], stride=1,
             padding="SAME", biases_initializer=None, activation_fn=tf.nn.tanh, scope='g_out', weights_initializer=initializer)
 
         g_out_concat = tf.concat(3, [g_out, g_out, g_out], name='concat')
