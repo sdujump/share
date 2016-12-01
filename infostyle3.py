@@ -54,11 +54,11 @@ real_in = tf.placeholder(shape=[None, 32, 32, 3], dtype=tf.float32)  # Real imag
 
 # These placeholders load the latent variables.
 latent_cat_in = tf.placeholder(shape=[None, 1], dtype=tf.int32)
-latent_cat_list = tf.split(1, 1, latent_cat_in)
+# latent_cat_list = tf.split(1, 1, latent_cat_in)
 latent_cont_in = tf.placeholder(shape=[None, number_continuous], dtype=tf.float32)
 
 oh_list = []
-latent_oh = tf.one_hot(tf.reshape(latent_cat_list[0], [-1]), 10)
+latent_oh = tf.one_hot(tf.reshape(latent_cat_in, [-1]), 10)
 oh_list.append(latent_oh)
 
 # Concatenate all c and z variables.
