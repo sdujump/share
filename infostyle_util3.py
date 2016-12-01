@@ -124,15 +124,10 @@ def discriminator(bottom, cat_list, conts, reuse=False):
         # Here we define the unique layers used for the q-network. The number of outputs depends on the number of
         # latent variables we choose to define.
         q_cat_outs = []
-        for idx, var in enumerate(cat_list):
-            q_outA = slim.fully_connected(q_a, var, activation_fn=tf.nn.softmax,
-                                          reuse=reuse, scope='q_out_cat_' + str(idx), weights_initializer=initializer)
-            q_cat_outs.append(q_outA)
+        q_outA = slim.fully_connected(q_a, 10, activation_fn=tf.nn.softmax, reuse=reuse, scope='q_out_cat', weights_initializer=initializer)
+        q_cat_outs.append(q_outA)
 
-        q_cont_outs = None
-        if conts > 0:
-            q_cont_outs = slim.fully_connected(q_a, conts, activation_fn=tf.nn.tanh,
-                                               reuse=reuse, scope='q_out_cont_' + str(conts), weights_initializer=initializer)
+        q_cont_outs = slim.fully_connected(q_a, 2, activation_fn=tf.nn.tanh, reuse=reuse, scope='q_out_cont', weights_initializer=initializer)
 
         return d_out, q_cat_outs, q_cont_outs
 
