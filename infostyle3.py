@@ -84,9 +84,9 @@ for i in xrange(num_gpus):
         with tf.device('/gpu:%d' % i):
             with tf.name_scope('Tower_%d' % (i)) as scope:
 
-                Gz = infostyle_util.generator(z_lat)  # Generates images from random z vectors
+                Gz = infostyle_util.generator(z_lat[i * batch_size:(i + 1) * batch_size, :])  # Generates images from random z vectors
                 # Produces probabilities for real images
-                Dx, _, _ = infostyle_util.discriminator(real_in)
+                Dx, _, _ = infostyle_util.discriminator(real_in[i * batch_size:(i + 1) * batch_size, :, :, :])
                 # Produces probabilities for generator images
                 Dg, QgCat, QgCont = infostyle_util.discriminator(Gz, reuse=True)
 
@@ -97,7 +97,7 @@ for i in xrange(num_gpus):
 
                 # Combine losses for each of the categorical variables.
                 cat_losses = []
-                cat_loss = -tf.reduce_sum(oh_list[0] * tf.log(QgCat[0]), reduction_indices=1)
+                cat_loss = -tf.reduce_sum(oh_list[0][i * batch_size:(i + 1) * batch_size, :] * tf.log(QgCat[0]), reduction_indices=1)
                 cat_losses.append(cat_loss)
 
                 # Combine losses for each of the continous variables.
@@ -144,7 +144,7 @@ def train_infogan():
     epoch = 0
     batch_size = 64  # Size of image batch to apply at each iteration.
     num_epochs = 50  # Total number of iterations to use.
-    total_batch = int(np.floor(num_examples / batch_size))
+    total_batch = int(np.floor(num_examples / (batch_size * num_gpus)))
     # Directory to save sample images from generator in.
     sample_directory = './figsTut'
     model_directory = './models'  # Directory to save trained model to.
@@ -155,18 +155,18 @@ def train_infogan():
     with tf.Session(config=config) as sess:
         sess.run(init)
         while epoch < num_epochs:
-            iter_ = infostyle_util.data_iterator(images, filenames, batch_size)
+            iter_ = infostyle_util.data_iterator(images, filenames, batch_size * num_gpus)
             for i in tqdm.tqdm(range(total_batch)):
                 # Generate a random z batch
-                zs = np.random.uniform(-1.0, 1.0, size=[batch_size, z_size]).astype(np.float32)
-                lcat = np.random.randint(0, 10, [batch_size, 1])  # Generate random c batch
-                lcont = np.random.uniform(-1, 1, [batch_size, number_continuous])
+                zs = np.random.uniform(-1.0, 1.0, size=[batch_size * num_gpus, z_size]).astype(np.float32)
+                lcat = np.random.randint(0, 10, [batch_size * num_gpus, 1])  # Generate random c batch
+                lcont = np.random.uniform(-1, 1, [batch_size * num_gpus, number_continuous])
 
                 # Draw a sample batch from MNIST dataset.
                 xs, _ = iter_.next()
                 # xs, _ = mnist.train.next_batch(batch_size)
                 # Transform it to be between -1 and 1
-                xs = (np.reshape(xs, [batch_size, image_size, image_size, 3]) / 255.0 - 0.5) * 2.0
+                xs = (np.reshape(xs, [batch_size * num_gpus, image_size, image_size, 3]) / 255.0 - 0.5) * 2.0
                 # xs = np.lib.pad(xs, ((0, 0), (2, 2), (2, 2), (0, 0)), 'constant', constant_values=(-1, -1))  # Pad the images so the are 32x32
 
                 _, dLoss = sess.run([update_D, d_loss], feed_dict={z_in: zs, real_in: xs, latent_cat_in: lcat, latent_cont_in: lcont})  # Update the discriminator
