@@ -64,6 +64,10 @@ tower_grads_G = []
 tower_grads_Q = []
 Output = []
 
+tower_dloss = []
+tower_gloss = []
+tower_qloss = []
+
 for i in xrange(num_gpus):
         with tf.device('/gpu:%d' % i):
             with tf.name_scope('Tower_%d' % (i)) as scope:
@@ -78,6 +82,7 @@ for i in xrange(num_gpus):
                 # This optimizes the discriminator.
                 d_loss = -tf.reduce_mean(tf.log(Dx) + tf.log(1. - Dg))
                 g_loss = -tf.reduce_mean(tf.log((Dg / (1 - Dg))))  # KL Divergence optimizer
+                # d_loss = tf.Print(d_loss, [d_loss], 'd_loss = ', summarize=-1)
 
                 # Combine losses for each of the categorical variables.
                 cat_losses = []
@@ -108,6 +113,9 @@ for i in xrange(num_gpus):
                 tower_grads_G.append(g_grads)
                 tower_grads_Q.append(q_grads)
                 Output.append(Gz)
+                tower_dloss.append(d_loss)
+                tower_gloss.append(g_loss)
+                tower_qloss.append(q_loss)
 
 # Average the gradients
 grads_d = infostyle_util.average_gradients(tower_grads_D)
@@ -119,6 +127,10 @@ update_G = trainerG.apply_gradients(grads_g)
 update_Q = trainerQ.apply_gradients(grads_q)
 
 Outputs = tf.concat(1, Output)
+
+mdloss = tf.reduce_mean(tower_dloss)
+mgloss = tf.reduce_mean(tower_gloss)
+mqloss = tf.reduce_mean(tower_qloss)
 
 
 def train_infogan():
@@ -156,13 +168,13 @@ def train_infogan():
                 xs = (np.reshape(xs, [batch_size * num_gpus, image_size, image_size, 3]) / 255.0 - 0.5) * 2.0
                 # xs = np.lib.pad(xs, ((0, 0), (2, 2), (2, 2), (0, 0)), 'constant', constant_values=(-1, -1))  # Pad the images so the are 32x32
 
-                _, dLoss = sess.run([update_D, d_loss], feed_dict={z_lat: zlat, real_in: xs})  # Update the discriminator
+                _, dLoss = sess.run([update_D, mdloss], feed_dict={z_lat: zlat, real_in: xs})  # Update the discriminator
                 # Update the generator, twice for good measure.
-                _, gLoss = sess.run([update_G, g_loss], feed_dict={z_lat: zlat})
-                _, qLoss, qK, qC = sess.run([update_Q, q_loss, q_cont_loss, q_cat_loss], feed_dict={z_lat: zlat})  # Update to optimize mutual information.
+                _, gLoss = sess.run([update_G, mgloss], feed_dict={z_lat: zlat})
+                _, qLoss = sess.run([update_Q, mqloss], feed_dict={z_lat: zlat})  # Update to optimize mutual information.
 
                 if i % 100 == 0:
-                    print "epoch: " + str(epoch) + " Gen Loss: " + str(gLoss) + " Disc Loss: " + str(dLoss) + " Q Losses: " + str([qK, qC])
+                    print "epoch: " + str(epoch) + " Gen Loss: " + str(gLoss) + " Disc Loss: " + str(dLoss) + " Q Losses: " + str(qLoss)
                     # Generate another z batch
                     z_sample = np.random.uniform(-1.0, 1.0, size=[batch_size * num_gpus, z_size]).astype(np.float32)
                     lcat_sample = np.array([e for e in range(10) for tempi in range(10 * num_gpus)])
