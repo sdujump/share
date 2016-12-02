@@ -180,7 +180,7 @@ def train_infogan():
                         os.makedirs(sample_directory)
                     # Save sample generator images for viewing training
                     # progress.
-                    infostyle_util.save_images(np.reshape(samples[0:100 * num_gpus], [batch_size, image_size, image_size, 3]), [20, 20], sample_directory + '/fig' + str(epoch) + str(i) + '.png')
+                    infostyle_util.save_images(np.reshape(samples[0:100 * num_gpus], [batch_size * num_gpus, image_size, image_size, 3]), [20, 20], sample_directory + '/fig' + str(epoch) + str(i) + '.png')
             epoch += 1
             if not os.path.exists(model_directory):
                 os.makedirs(model_directory)
