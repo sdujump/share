@@ -134,18 +134,21 @@ mqloss = tf.reduce_mean(tower_qloss)
 
 
 def train_infogan():
-    num_examples = 60000
-    epoch = 0
-    num_epochs = 50  # Total number of iterations to use.
-    total_batch = int(np.floor(num_examples / (batch_size * num_gpus)))
-    # Directory to save sample images from generator in.
-    sample_directory = './figsTut'
-    model_directory = './models'  # Directory to save trained model to.
-    init = tf.initialize_all_variables()
-    saver = tf.train.Saver()
 
-    config = tf.ConfigProto(allow_soft_placement=True)
-    with tf.Session(config=config) as sess:
+    with tf.Graph().as_default(), tf.device('/cpu:0'):
+        # Create a variable to count the number of train() calls. This equals the
+        # number of batches processed * FLAGS.num_gpus.
+        # global_step = tf.get_variable('global_step', [], initializer=tf.constant_initializer(0), trainable=False)
+        num_examples = 60000
+        epoch = 0
+        num_epochs = 50  # Total number of iterations to use.
+        total_batch = int(np.floor(num_examples / (batch_size * num_gpus)))
+        # Directory to save sample images from generator in.
+        sample_directory = './figsTut'
+        model_directory = './models'  # Directory to save trained model to.
+        init = tf.initialize_all_variables()
+        saver = tf.train.Saver()
+        sess = tf.Session(config=tf.ConfigProto(allow_soft_placement=True, log_device_placement=FLAGS.log_device_placement))
         sess.run(init)
         while epoch < num_epochs:
             iter_ = infostyle_util.data_iterator(images, filenames, batch_size * num_gpus)
