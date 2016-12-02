@@ -156,9 +156,9 @@ def train_infogan():
                 # Update the generator, twice for good measure.
                 _, gLoss = sess.run([update_G, g_loss], feed_dict={z_lat: zlat})
                 _, qLoss, qK, qC = sess.run([update_Q, q_loss, q_cont_loss, q_cat_loss], feed_dict={z_lat: zlat})  # Update to optimize mutual information.
-
                 if i % 100 == 0:
                     print "epoch: " + str(epoch) + " Gen Loss: " + str(gLoss) + " Disc Loss: " + str(dLoss) + " Q Losses: " + str([qK, qC])
+                if i == -1:
                     # Generate another z batch
                     z_sample = np.random.uniform(-1.0, 1.0, size=[batch_size, z_size]).astype(np.float32)
                     lcat_sample = np.array([e for e in range(10) for tempi in range(10)])
