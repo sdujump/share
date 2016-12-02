@@ -32,7 +32,7 @@ def show_variables(variales):
         print(variales[i].name)
 
 
-tf.reset_default_graph()
+# tf.reset_default_graph()
 
 num_gpus = 1
 tempg = np.sqrt(num_gpus).astype(np.int16)
@@ -43,94 +43,12 @@ image_size = 32
 # Each entry in this list defines a categorical variable of a specific size.
 categorical_list = 10
 number_continuous = 2  # The number of continous variables.
-
-# This initializaer is used to initialize all the weights of the network.
-initializer = tf.truncated_normal_initializer(stddev=0.02)
-
-# These placeholders are used for input into the generator and discriminator, respectively.
-real_in = tf.placeholder(shape=[None, image_size, image_size, 3], dtype=tf.float32)  # Real images
-
-z_lat = tf.placeholder(shape=[None, z_size + categorical_list + number_continuous], dtype=tf.float32)  # Random vector
-
-
-# The below code is responsible for applying gradient descent to update
-# the GAN.
-trainerD = tf.train.AdamOptimizer(learning_rate=0.0002, beta1=0.5)
-trainerG = tf.train.AdamOptimizer(learning_rate=0.002, beta1=0.5)
-trainerQ = tf.train.AdamOptimizer(learning_rate=0.0002, beta1=0.5)
-
-tower_grads_D = []
-tower_grads_G = []
-tower_grads_Q = []
-Output = []
-
-tower_dloss = []
-tower_gloss = []
-tower_qloss = []
-
-for i in xrange(num_gpus):
-        with tf.device('/gpu:%d' % i):
-            with tf.name_scope('Tower_%d' % (i)) as scope:
-
-                Gz = infostyle_util.generator(z_lat[i * batch_size:(i + 1) * batch_size, :])  # Generates images from random z vectors
-                # Produces probabilities for real images
-                Dx, _, _ = infostyle_util.discriminator(real_in[i * batch_size:(i + 1) * batch_size, :])
-                # Produces probabilities for generator images
-                Dg, QgCat, QgCont = infostyle_util.discriminator(Gz, reuse=True)
-
-                # These functions together define the optimization objective of the GAN.
-                # This optimizes the discriminator.
-                d_loss = -tf.reduce_mean(tf.log(Dx) + tf.log(1. - Dg))
-                g_loss = -tf.reduce_mean(tf.log((Dg / (1 - Dg))))  # KL Divergence optimizer
-                # d_loss = tf.Print(d_loss, [d_loss], 'd_loss = ', summarize=-1)
-
-                # Combine losses for each of the categorical variables.
-                cat_losses = []
-                cat_loss = -tf.reduce_sum(z_lat[i * batch_size:(i + 1) * batch_size, 0:categorical_list] * tf.log(QgCat[0]), reduction_indices=1)
-                cat_losses.append(cat_loss)
-
-                # Combine losses for each of the continous variables.
-                q_cont_loss = tf.reduce_sum(0.5 * tf.square(z_lat[i * batch_size:(i + 1) * batch_size, categorical_list + z_size:] - QgCont), reduction_indices=1)
-
-                q_cont_loss = tf.reduce_mean(q_cont_loss)
-                q_cat_loss = tf.reduce_mean(cat_losses)
-                q_loss = tf.add(q_cat_loss, q_cont_loss)
-                tvars = tf.trainable_variables()
-
-                gen_vars = [v for v in tvars if v.name.startswith("generator/")]
-                dis_vars = [v for v in tvars if v.name.startswith("discriminator/")]
-
-                tf.get_variable_scope().reuse_variables()  # important
-
-                # Only update the weights for the discriminator network.
-                d_grads = trainerD.compute_gradients(d_loss, dis_vars)
-                # Only update the weights for the generator network.
-                g_grads = trainerG.compute_gradients(g_loss, gen_vars)
-                q_grads = trainerG.compute_gradients(q_loss, tvars)
-
-                # Keep track of the gradients across all towers.
-                tower_grads_D.append(d_grads)
-                tower_grads_G.append(g_grads)
-                tower_grads_Q.append(q_grads)
-                Output.append(Gz)
-                tower_dloss.append(d_loss)
-                tower_gloss.append(g_loss)
-                tower_qloss.append(q_loss)
-
-# Average the gradients
-grads_d = infostyle_util.average_gradients(tower_grads_D)
-grads_g = infostyle_util.average_gradients(tower_grads_G)
-grads_q = infostyle_util.average_gradients(tower_grads_Q)
-
-update_D = trainerD.apply_gradients(grads_d)
-update_G = trainerG.apply_gradients(grads_g)
-update_Q = trainerQ.apply_gradients(grads_q)
-
-Outputs = tf.concat(1, Output)
-
-mdloss = tf.reduce_mean(tower_dloss)
-mgloss = tf.reduce_mean(tower_gloss)
-mqloss = tf.reduce_mean(tower_qloss)
+num_examples = 60000
+num_epochs = 50  # Total number of iterations to use.
+total_batch = int(np.floor(num_examples / (batch_size * num_gpus)))
+# Directory to save sample images from generator in.
+sample_directory = './figsTut'
+model_directory = './models'  # Directory to save trained model to.
 
 
 def train_infogan():
@@ -139,17 +57,99 @@ def train_infogan():
         # Create a variable to count the number of train() calls. This equals the
         # number of batches processed * FLAGS.num_gpus.
         # global_step = tf.get_variable('global_step', [], initializer=tf.constant_initializer(0), trainable=False)
-        num_examples = 60000
-        epoch = 0
-        num_epochs = 50  # Total number of iterations to use.
-        total_batch = int(np.floor(num_examples / (batch_size * num_gpus)))
-        # Directory to save sample images from generator in.
-        sample_directory = './figsTut'
-        model_directory = './models'  # Directory to save trained model to.
+
+        # This initializaer is used to initialize all the weights of the network.
+        # initializer = tf.truncated_normal_initializer(stddev=0.02)
+
+        # These placeholders are used for input into the generator and discriminator, respectively.
+        real_in = tf.placeholder(shape=[None, image_size, image_size, 3], dtype=tf.float32)  # Real images
+
+        z_lat = tf.placeholder(shape=[None, z_size + categorical_list + number_continuous], dtype=tf.float32)  # Random vector
+
+        # The below code is responsible for applying gradient descent to update
+        # the GAN.
+        trainerD = tf.train.AdamOptimizer(learning_rate=0.0002, beta1=0.5)
+        trainerG = tf.train.AdamOptimizer(learning_rate=0.002, beta1=0.5)
+        trainerQ = tf.train.AdamOptimizer(learning_rate=0.0002, beta1=0.5)
+
+        tower_grads_D = []
+        tower_grads_G = []
+        tower_grads_Q = []
+        Output = []
+
+        tower_dloss = []
+        tower_gloss = []
+        tower_qloss = []
+
+        for i in xrange(num_gpus):
+                with tf.device('/gpu:%d' % i):
+                    with tf.name_scope('Tower_%d' % (i)):
+
+                        Gz = infostyle_util.generator(z_lat[i * batch_size:(i + 1) * batch_size, :])  # Generates images from random z vectors
+                        # Produces probabilities for real images
+                        Dx, _, _ = infostyle_util.discriminator(real_in[i * batch_size:(i + 1) * batch_size, :])
+                        # Produces probabilities for generator images
+                        Dg, QgCat, QgCont = infostyle_util.discriminator(Gz, reuse=True)
+
+                        # These functions together define the optimization objective of the GAN.
+                        # This optimizes the discriminator.
+                        d_loss = -tf.reduce_mean(tf.log(Dx) + tf.log(1. - Dg))
+                        g_loss = -tf.reduce_mean(tf.log((Dg / (1 - Dg))))  # KL Divergence optimizer
+                        # d_loss = tf.Print(d_loss, [d_loss], 'd_loss = ', summarize=-1)
+
+                        # Combine losses for each of the categorical variables.
+                        cat_losses = []
+                        cat_loss = -tf.reduce_sum(z_lat[i * batch_size:(i + 1) * batch_size, 0:categorical_list] * tf.log(QgCat[0]), reduction_indices=1)
+                        cat_losses.append(cat_loss)
+
+                        # Combine losses for each of the continous variables.
+                        q_cont_loss = tf.reduce_sum(0.5 * tf.square(z_lat[i * batch_size:(i + 1) * batch_size, categorical_list + z_size:] - QgCont), reduction_indices=1)
+
+                        q_cont_loss = tf.reduce_mean(q_cont_loss)
+                        q_cat_loss = tf.reduce_mean(cat_losses)
+                        q_loss = tf.add(q_cat_loss, q_cont_loss)
+                        tvars = tf.trainable_variables()
+
+                        gen_vars = [v for v in tvars if v.name.startswith("generator/")]
+                        dis_vars = [v for v in tvars if v.name.startswith("discriminator/")]
+
+                        tf.get_variable_scope().reuse_variables()  # important
+
+                        # Only update the weights for the discriminator network.
+                        d_grads = trainerD.compute_gradients(d_loss, dis_vars)
+                        # Only update the weights for the generator network.
+                        g_grads = trainerG.compute_gradients(g_loss, gen_vars)
+                        q_grads = trainerG.compute_gradients(q_loss, tvars)
+
+                        # Keep track of the gradients across all towers.
+                        tower_grads_D.append(d_grads)
+                        tower_grads_G.append(g_grads)
+                        tower_grads_Q.append(q_grads)
+                        Output.append(Gz)
+                        tower_dloss.append(d_loss)
+                        tower_gloss.append(g_loss)
+                        tower_qloss.append(q_loss)
+
+        # Average the gradients
+        grads_d = infostyle_util.average_gradients(tower_grads_D)
+        grads_g = infostyle_util.average_gradients(tower_grads_G)
+        grads_q = infostyle_util.average_gradients(tower_grads_Q)
+
+        update_D = trainerD.apply_gradients(grads_d)
+        update_G = trainerG.apply_gradients(grads_g)
+        update_Q = trainerQ.apply_gradients(grads_q)
+
+        Outputs = tf.concat(1, Output)
+
+        mdloss = tf.reduce_mean(tower_dloss)
+        mgloss = tf.reduce_mean(tower_gloss)
+        mqloss = tf.reduce_mean(tower_qloss)
+
         init = tf.initialize_all_variables()
         saver = tf.train.Saver()
         sess = tf.Session(config=tf.ConfigProto(allow_soft_placement=True, log_device_placement=FLAGS.log_device_placement))
         sess.run(init)
+        epoch = 0
         while epoch < num_epochs:
             iter_ = infostyle_util.data_iterator(images, filenames, batch_size * num_gpus)
             for i in tqdm.tqdm(range(total_batch)):
