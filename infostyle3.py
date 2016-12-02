@@ -1,18 +1,14 @@
 # Import the libraries we will need.
 import tensorflow as tf
 import numpy as np
-import input_data
-import matplotlib.pyplot as plt
-import tensorflow.contrib.slim as slim
 import os
 import scipy.misc
-import scipy
 import infostyle_util3 as infostyle_util
 import h5py  # for reading our dataset
 from tensorflow.python.client import device_lib
 import tqdm  # making loops prettier
 
-os.environ["CUDA_VISIBLE_DEVICES"] = "0, 1, 2, 3"
+os.environ["CUDA_VISIBLE_DEVICES"] = "0"
 print device_lib.list_local_devices()
 
 tf.app.flags.DEFINE_string("train_image_dir", "train_images", "")
