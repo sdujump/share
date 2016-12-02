@@ -18,7 +18,7 @@ print device_lib.list_local_devices()
 tf.app.flags.DEFINE_string("train_image_dir", "train_images", "")
 tf.app.flags.DEFINE_string("test_image_dir", "test_images", "")
 tf.app.flags.DEFINE_string("model_dir", "model2", "")
-tf.app.flags.DEFINE_integer("batch_size", 100, "")
+tf.app.flags.DEFINE_integer("batch_size", 64, "")
 FLAGS = tf.app.flags.FLAGS
 
 
@@ -116,7 +116,7 @@ def train_infogan():
                 zs = np.random.uniform(-1.0, 1.0, size=[batch_size, z_size]).astype(np.float32)
                 lcont = np.random.uniform(-1, 1, [batch_size, number_continuous])
 
-                lcat = np.random.randint(0, 10, [batch_size])  # Generate random c batch
+                lcat = np.random.randint(0, 10, [batch_size, ])  # Generate random c batch
                 latent_oh = np.zeros((batch_size, 10))
                 latent_oh[np.arange(batch_size), lcat] = 1
 
@@ -137,19 +137,16 @@ def train_infogan():
                 if i % 100 == 0:
                     print "epoch: " + str(epoch) + " Gen Loss: " + str(gLoss) + " Disc Loss: " + str(dLoss) + " Q Losses: " + str([qK, qC])
                     # Generate another z batch
-                    zs = np.random.uniform(-1.0, 1.0, size=[batch_size, z_size]).astype(np.float32)
-                    lcat = np.reshape(np.array([e for e in range(10) for tempi in range(10)]), [batch_size, 1])
-                    aa = np.reshape(np.array([[(e / 4.5 - 1.)] for e in range(10) for tempj in range(10)]), [10, 10]).T
-                    bb = np.reshape(aa, [batch_size, 1])
+                    z_sample = np.random.uniform(-1.0, 1.0, size=[100, z_size]).astype(np.float32)
+                    lcat_sample = np.array([e for e in range(10) for tempi in range(10)])
+                    latent_oh = np.zeros((100, 10))
+                    latent_oh[np.arange(100), lcat_sample] = 1
+
+                    aa = np.reshape(np.array([[(ee / 4.5 - 1.)] for ee in range(10) for tempj in range(10)]), [10, 10]).T
+                    bb = np.reshape(aa, [100, 1])
                     cc = np.zeros_like(bb)
-                    lcont = np.hstack([bb, cc])
-
-                    lcat = np.random.randint(0, 10, [batch_size])  # Generate random c batch
-                    latent_oh = np.zeros((batch_size, 10))
-                    latent_oh[np.arange(batch_size), lcat] = 1
-
-                    # Concatenate all c and z variables.
-                    zlat = np.concatenate([latent_oh, zs, lcont], 1).astype(np.float32)
+                    lcont_sample = np.hstack([bb, cc])
+                    zlat = np.concatenate([latent_oh, z_sample, lcont_sample], 1).astype(np.float32)
                     # Use new z to get sample images from generator.
                     samples = sess.run(Gz, feed_dict={z_lat: zlat})
                     if not os.path.exists(sample_directory):

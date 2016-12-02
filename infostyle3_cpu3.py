@@ -53,11 +53,11 @@ z_in = tf.placeholder(shape=[None, z_size], dtype=tf.float32)  # Random vector
 real_in = tf.placeholder(shape=[None, image_size, image_size, 3], dtype=tf.float32)  # Real images
 
 # These placeholders load the latent variables.
-latent_cat_in = tf.placeholder(shape=[None, 1], dtype=tf.int32)
+latent_cat_in = tf.placeholder(shape=[None, ], dtype=tf.int32)
 # latent_cat_list = tf.split(1, 1, latent_cat_in)
 latent_cont_in = tf.placeholder(shape=[None, number_continuous], dtype=tf.float32)
 
-latent_oh = tf.one_hot(tf.reshape(latent_cat_in, [-1]), 10)
+latent_oh = tf.one_hot(latent_cat_in, 10)
 
 # Concatenate all c and z variables.
 z_lat = tf.concat(1, [latent_oh, z_in, latent_cont_in])
@@ -128,10 +128,16 @@ def train_infogan():
             for i in tqdm.tqdm(range(total_batch)):
                 # Generate a random z batch
                 zs = np.random.uniform(-1.0, 1.0, size=[batch_size, z_size]).astype(np.float32)
-                lcat = np.random.randint(0, 10, [batch_size, 1])  # Generate random c batch
+                lcat = np.random.randint(0, 10, [batch_size, ])  # Generate random c batch
                 lcont = np.random.uniform(-1, 1, [batch_size, number_continuous])
 
-                # Draw a sample batch from MNIST dataset.
+                latent_oh = np.zeros((batch_size, 10))
+                latent_oh[np.arange(batch_size), lcat] = 1
+
+                # Concatenate all c and z variables.
+                npzlat = np.concatenate([latent_oh, zs, lcont], 1).astype(np.float32)
+
+                # Draw a sample batch from MNIST dataset.b
                 xs, _ = iter_.next()
                 # xs, _ = mnist.train.next_batch(batch_size)
                 # Transform it to be between -1 and 1
@@ -149,14 +155,20 @@ def train_infogan():
                     # Generate another z batch
                     z_sample = np.random.uniform(-1.0, 1.0,
                                                  size=[100, z_size]).astype(np.float32)
-                    lcat_sample = np.reshape(np.array([e for e in range(10) for tempi in range(10)]), [100, 1])
+                    lcat_sample = np.array([e for e in range(10) for tempi in range(10)])
                     a = a = np.reshape(
                         np.array([[(e / 4.5 - 1.)] for e in range(10) for tempj in range(10)]), [10, 10]).T
                     b = np.reshape(a, [100, 1])
                     c = np.zeros_like(b)
                     lcont_sample = np.hstack([b, c])
+
+                    latent_oh2 = np.zeros((100, 10))
+                    latent_oh2[np.arange(100), lcat_sample] = 1
+
+                    npzlat2 = np.concatenate([latent_oh2, z_sample, lcont_sample], 1).astype(np.float32)
+
                     # Use new z to get sample images from generator.
-                    samples = sess.run(Gz, feed_dict={z_in: z_sample, latent_cat_in: lcat_sample, latent_cont_in: lcont_sample})
+                    samples, zlat2 = sess.run([Gz, z_lat], feed_dict={z_in: z_sample, latent_cat_in: lcat_sample, latent_cont_in: lcont_sample})
                     if not os.path.exists(sample_directory):
                         os.makedirs(sample_directory)
                     # Save sample generator images for viewing training
