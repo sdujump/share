@@ -34,7 +34,7 @@ def show_variables(variales):
 
 tf.reset_default_graph()
 
-num_gpus = 4
+num_gpus = 1
 z_size = 64  # Size of initial z vector used for generator.
 image_size = 32
 # Define latent variables.
