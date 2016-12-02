@@ -76,7 +76,7 @@ g_loss = -tf.reduce_mean(tf.log((Dg / (1 - Dg))))  # KL Divergence optimizer
 
 # Combine losses for each of the categorical variables.
 cat_losses = []
-cat_loss = -tf.reduce_sum(oh_list[0] * tf.log(QgCat[0]), reduction_indices=1)
+cat_loss = -tf.reduce_sum(latent_oh * tf.log(QgCat[0]), reduction_indices=1)
 cat_losses.append(cat_loss)
 
 # Combine losses for each of the continous variables.
