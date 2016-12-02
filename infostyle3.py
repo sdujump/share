@@ -8,7 +8,7 @@ import h5py  # for reading our dataset
 from tensorflow.python.client import device_lib
 import tqdm  # making loops prettier
 
-os.environ["CUDA_VISIBLE_DEVICES"] = "0, 1, 2, 3"
+os.environ["CUDA_VISIBLE_DEVICES"] = "0"
 print device_lib.list_local_devices()
 
 tf.app.flags.DEFINE_string("train_image_dir", "train_images", "")
@@ -34,7 +34,7 @@ def show_variables(variales):
 
 tf.reset_default_graph()
 
-num_gpus = 4
+num_gpus = 1
 z_size = 64  # Size of initial z vector used for generator.
 image_size = 32
 # Define latent variables.
@@ -167,8 +167,9 @@ def train_infogan():
                     latent_oh = np.zeros((batch_size * num_gpus, 10))
                     latent_oh[np.arange(batch_size * num_gpus), lcat_sample] = 1
 
-                    aa = np.reshape(np.array([[(ee / 4.5 - 2.)] for ee in range(20) for tempj in range(20)]), [20, 20]).T
-                    bb = np.reshape(aa, [400, 1])
+                    tempg = np.sqrt(num_gpus)
+                    aa = np.reshape(np.array([[(ee / 4.5 - tempg)] for ee in range(10 * tempg) for tempj in range(10 * tempg)]), [10 * tempg, 10 * tempg]).T
+                    bb = np.reshape(aa, [batch_size * num_gpus, 1])
                     cc = np.zeros_like(bb)
                     lcont_sample = np.hstack([bb, cc])
 
@@ -180,7 +181,7 @@ def train_infogan():
                         os.makedirs(sample_directory)
                     # Save sample generator images for viewing training
                     # progress.
-                    infostyle_util.save_images(np.reshape(samples[0:100 * num_gpus], [batch_size * num_gpus, image_size, image_size, 3]), [20, 20], sample_directory + '/fig' + str(epoch) + str(i) + '.png')
+                    infostyle_util.save_images(np.reshape(samples[0:batch_size * num_gpus], [batch_size * num_gpus, image_size, image_size, 3]), [10 * tempg, 10 * tempg], sample_directory + '/fig' + str(epoch) + str(i) + '.png')
             epoch += 1
             if not os.path.exists(model_directory):
                 os.makedirs(model_directory)
