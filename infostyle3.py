@@ -35,6 +35,8 @@ def show_variables(variales):
 tf.reset_default_graph()
 
 num_gpus = 1
+tempg = np.sqrt(num_gpus).astype(np.int16)
+
 z_size = 64  # Size of initial z vector used for generator.
 image_size = 32
 # Define latent variables.
@@ -167,7 +169,6 @@ def train_infogan():
                     latent_oh = np.zeros((batch_size * num_gpus, 10))
                     latent_oh[np.arange(batch_size * num_gpus), lcat_sample] = 1
 
-                    tempg = np.sqrt(num_gpus).astype(np.int16)
                     aa = np.reshape(np.array([[(ee / 4.5 - tempg)] for ee in range(10 * tempg) for tempj in range(10 * tempg)]), [10 * tempg, 10 * tempg]).T
                     bb = np.reshape(aa, [batch_size * num_gpus, 1])
                     cc = np.zeros_like(bb)
