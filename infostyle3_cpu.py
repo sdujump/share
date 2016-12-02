@@ -140,12 +140,15 @@ def train_infogan():
                     z_sample = np.random.uniform(-1.0, 1.0,
                                                  size=[100, z_size]).astype(np.float32)
                     lcat_sample = np.reshape(np.array([e for e in range(10) for tempi in range(10)]), [100, 1])
+                    latent_oh = np.zeros((100, 10))
+                    latent_oh[np.arange(100), lcat_sample] = 1
+
                     a = a = np.reshape(
                         np.array([[(e / 4.5 - 1.)] for e in range(10) for tempj in range(10)]), [10, 10]).T
                     b = np.reshape(a, [100, 1])
                     c = np.zeros_like(b)
                     lcont_sample = np.hstack([b, c])
-                    zlat = np.concatenate([lcat_sample, z_sample, lcont_sample], 1).astype(np.float32)
+                    zlat = np.concatenate([latent_oh, z_sample, lcont_sample], 1).astype(np.float32)
                     # Use new z to get sample images from generator.
                     samples = sess.run(Gz, feed_dict={z_lat: zlat})
                     if not os.path.exists(sample_directory):
