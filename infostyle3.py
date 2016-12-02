@@ -147,7 +147,7 @@ def train_infogan():
 
         init = tf.initialize_all_variables()
         saver = tf.train.Saver()
-        sess = tf.Session(config=tf.ConfigProto(allow_soft_placement=True, log_device_placement=FLAGS.log_device_placement))
+        sess = tf.Session(config=tf.ConfigProto(allow_soft_placement=True))
         sess.run(init)
         epoch = 0
         while epoch < num_epochs:
