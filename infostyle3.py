@@ -8,7 +8,7 @@ import h5py  # for reading our dataset
 from tensorflow.python.client import device_lib
 import tqdm  # making loops prettier
 
-os.environ["CUDA_VISIBLE_DEVICES"] = "0"
+os.environ["CUDA_VISIBLE_DEVICES"] = "0, 1, 2, 3"
 print device_lib.list_local_devices()
 
 tf.app.flags.DEFINE_string("train_image_dir", "train_images", "")
@@ -34,7 +34,7 @@ def show_variables(variales):
 
 tf.reset_default_graph()
 
-num_gpus = 1
+num_gpus = 4
 z_size = 64  # Size of initial z vector used for generator.
 image_size = 32
 # Define latent variables.
@@ -201,20 +201,18 @@ def test_infogan():
         saver.restore(sess, ckpt.model_checkpoint_path)
 
         # Generate another z batch
-        zs = np.random.uniform(-1.0, 1.0, size=[batch_size, z_size]).astype(np.float32)
-        lcat = np.reshape(np.array([e for e in range(10) for tempi in range(10)]), [batch_size, 1])
-        aa = np.reshape(np.array([[(e / 4.5 - 1.)] for e in range(10) for tempj in range(10)]), [10, 10]).T
-        bb = np.reshape(aa, [batch_size, 1])
-        cc = np.zeros_like(bb)
-        lcont = np.hstack([bb, cc])
-
-        lcat = np.random.randint(0, 10, [batch_size])  # Generate random c batch
+        z_sample = np.random.uniform(-1.0, 1.0, size=[batch_size, z_size]).astype(np.float32)
+        lcat_sample = np.array([e for e in range(10) for tempi in range(10)])
         latent_oh = np.zeros((batch_size, 10))
-        latent_oh[np.arange(batch_size), lcat] = 1
+        latent_oh[np.arange(batch_size), lcat_sample] = 1
+
+        aa = np.reshape(np.array([[(ee / 4.5 - 1.)] for ee in range(10) for tempj in range(10)]), [10, 10]).T
+        bb = np.reshape(aa, [100, 1])
+        cc = np.zeros_like(bb)
+        lcont_sample = np.hstack([bb, cc])
 
         # Concatenate all c and z variables.
-        zlat = np.concatenate([latent_oh, zs, lcont], 1)
-
+        zlat = np.concatenate([latent_oh, z_sample, lcont_sample], 1).astype(np.float32)
         # Use new z to get sample images from generator.
         samples = sess.run(Gz, feed_dict={z_lat: zlat})
         if not os.path.exists(sample_directory):
