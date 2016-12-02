@@ -142,7 +142,7 @@ def train_infogan():
                 # Transform it to be between -1 and 1
                 xs = (np.reshape(xs, [batch_size, image_size, image_size, 3]) / 255.0 - 0.5) * 2.0
                 # xs = np.lib.pad(xs, ((0, 0), (2, 2), (2, 2), (0, 0)), 'constant', constant_values=(-1, -1))  # Pad the images so the are 32x32
-
+                zlat = sess.run([z_lat], feed_dict={z_in: zs, latent_cat_in: lcat, latent_cont_in: lcont})  # Update the discriminator
                 _, dLoss = sess.run([update_D, d_loss], feed_dict={z_in: zs, real_in: xs, latent_cat_in: lcat, latent_cont_in: lcont})  # Update the discriminator
                 # Update the generator, twice for good measure.
                 _, gLoss = sess.run([update_G, g_loss], feed_dict={
