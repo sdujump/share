@@ -42,7 +42,7 @@ z_size = 64  # Size of initial z vector used for generator.
 image_size = 32
 # Define latent variables.
 # Each entry in this list defines a categorical variable of a specific size.
-categorical_list = [10]
+categorical_list = 10
 number_continuous = 2  # The number of continous variables.
 
 # This initializaer is used to initialize all the weights of the network.
