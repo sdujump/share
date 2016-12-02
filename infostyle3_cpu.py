@@ -146,6 +146,8 @@ def train_infogan():
                     bb = np.reshape(aa, [100, 1])
                     cc = np.zeros_like(bb)
                     lcont_sample = np.hstack([bb, cc])
+
+                    # Concatenate all c and z variables.
                     zlat = np.concatenate([latent_oh, z_sample, lcont_sample], 1).astype(np.float32)
                     # Use new z to get sample images from generator.
                     samples = sess.run(Gz, feed_dict={z_lat: zlat})
@@ -176,17 +178,18 @@ def test_infogan():
         saver.restore(sess, ckpt.model_checkpoint_path)
 
         # Generate another z batch
-        z_sample = np.random.uniform(-1.0, 1.0,
-                                     size=[100, z_size]).astype(np.float32)
-        lcat_sample = np.reshape(
-            np.array([e for e in range(10) for _ in range(10)]), [100, 1])
-        a = a = np.reshape(np.array([[(e / 4.5 - 1.)] for e in range(10) for _ in range(10)]), [10, 10]).T
-        b = np.reshape(a, [100, 1])
-        c = np.zeros_like(b)
-        lcont_sample = np.hstack([b, c])
+        z_sample = np.random.uniform(-1.0, 1.0, size=[100, z_size]).astype(np.float32)
+        lcat_sample = np.array([e for e in range(10) for tempi in range(10)])
+        latent_oh = np.zeros((100, 10))
+        latent_oh[np.arange(100), lcat_sample] = 1
+
+        aa = np.reshape(np.array([[(ee / 4.5 - 1.)] for ee in range(10) for tempj in range(10)]), [10, 10]).T
+        bb = np.reshape(aa, [100, 1])
+        cc = np.zeros_like(bb)
+        lcont_sample = np.hstack([bb, cc])
+        zlat = np.concatenate([latent_oh, z_sample, lcont_sample], 1).astype(np.float32)
         # Use new z to get sample images from generator.
-        samples = sess.run(Gz, feed_dict={
-                           z_in: z_sample, latent_cat_in: lcat_sample, latent_cont_in: lcont_sample})
+        samples = sess.run(Gz, feed_dict={z_lat: zlat})
         if not os.path.exists(sample_directory):
             os.makedirs(sample_directory)
         # Save sample generator images for viewing training progress.
