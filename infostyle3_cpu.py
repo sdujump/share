@@ -100,7 +100,6 @@ update_Q = trainerQ.apply_gradients(q_grads)
 def train_infogan():
     num_examples = 60000
     epoch = 0
-    batch_size = 64  # Size of image batch to apply at each iteration.
     num_epochs = 50  # Total number of iterations to use.
     total_batch = int(np.floor(num_examples / batch_size))
     # Directory to save sample images from generator in.
