@@ -60,7 +60,7 @@ trainerQ = tf.train.AdamOptimizer(learning_rate=0.0002, beta1=0.5)
 tower_grads_D = []
 tower_grads_G = []
 tower_grads_Q = []
-
+Output = []
 
 for i in xrange(num_gpus):
         with tf.device('/gpu:%d' % i):
@@ -105,7 +105,7 @@ for i in xrange(num_gpus):
                 tower_grads_D.append(d_grads)
                 tower_grads_G.append(g_grads)
                 tower_grads_Q.append(q_grads)
-
+                Output.append(Gz)
 
 # Average the gradients
 grads_d = infostyle_util.average_gradients(tower_grads_D)
@@ -115,6 +115,8 @@ grads_q = infostyle_util.average_gradients(tower_grads_Q)
 update_D = trainerD.apply_gradients(grads_d)
 update_G = trainerG.apply_gradients(grads_g)
 update_Q = trainerQ.apply_gradients(grads_q)
+
+Outputs = tf.concat(1, Output)
 
 
 def train_infogan():
@@ -156,29 +158,29 @@ def train_infogan():
                 # Update the generator, twice for good measure.
                 _, gLoss = sess.run([update_G, g_loss], feed_dict={z_lat: zlat})
                 _, qLoss, qK, qC = sess.run([update_Q, q_loss, q_cont_loss, q_cat_loss], feed_dict={z_lat: zlat})  # Update to optimize mutual information.
+
                 if i % 100 == 0:
                     print "epoch: " + str(epoch) + " Gen Loss: " + str(gLoss) + " Disc Loss: " + str(dLoss) + " Q Losses: " + str([qK, qC])
-                if i == -1:
                     # Generate another z batch
-                    z_sample = np.random.uniform(-1.0, 1.0, size=[batch_size, z_size]).astype(np.float32)
-                    lcat_sample = np.array([e for e in range(10) for tempi in range(10)])
-                    latent_oh = np.zeros((batch_size, 10))
-                    latent_oh[np.arange(batch_size), lcat_sample] = 1
+                    z_sample = np.random.uniform(-1.0, 1.0, size=[batch_size * num_gpus, z_size]).astype(np.float32)
+                    lcat_sample = np.array([e for e in range(10) for tempi in range(10 * num_gpus)])
+                    latent_oh = np.zeros((batch_size * num_gpus, 10))
+                    latent_oh[np.arange(batch_size * num_gpus), lcat_sample] = 1
 
-                    aa = np.reshape(np.array([[(ee / 4.5 - 1.)] for ee in range(10) for tempj in range(10)]), [10, 10]).T
-                    bb = np.reshape(aa, [100, 1])
+                    aa = np.reshape(np.array([[(ee / 4.5 - 2.)] for ee in range(20) for tempj in range(20)]), [20, 20]).T
+                    bb = np.reshape(aa, [400, 1])
                     cc = np.zeros_like(bb)
                     lcont_sample = np.hstack([bb, cc])
 
                     # Concatenate all c and z variables.
                     zlat = np.concatenate([latent_oh, z_sample, lcont_sample], 1).astype(np.float32)
                     # Use new z to get sample images from generator.
-                    samples = sess.run(Gz, feed_dict={z_lat: zlat})
+                    samples = sess.run(Outputs, feed_dict={z_lat: zlat})
                     if not os.path.exists(sample_directory):
                         os.makedirs(sample_directory)
                     # Save sample generator images for viewing training
                     # progress.
-                    infostyle_util.save_images(np.reshape(samples[0:100], [batch_size, image_size, image_size, 3]), [10, 10], sample_directory + '/fig' + str(epoch) + str(i) + '.png')
+                    infostyle_util.save_images(np.reshape(samples[0:100 * num_gpus], [batch_size, image_size, image_size, 3]), [20, 20], sample_directory + '/fig' + str(epoch) + str(i) + '.png')
             epoch += 1
             if not os.path.exists(model_directory):
                 os.makedirs(model_directory)
