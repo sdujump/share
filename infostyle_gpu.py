@@ -61,7 +61,7 @@ def train_infogan():
         # initializer = tf.truncated_normal_initializer(stddev=0.02)
 
         # These placeholders are used for input into the generator and discriminator, respectively.
-        real_in_list = tf.placeholder(shape=[num_gpus, None, image_size, image_size, 3], dtype=tf.float32)  # Real images
+        real_in_list = tf.placeholder(shape=[None, image_size, image_size, 3], dtype=tf.float32)  # Real images
         z_lat = tf.placeholder(shape=[None, z_size + categorical_list + number_continuous], dtype=tf.float32)  # Random vector
 
         # The below code is responsible for applying gradient descent to update
