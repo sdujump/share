@@ -133,7 +133,7 @@ def train_infogan():
 
                 # Draw a sample batch from MNIST dataset.
                 xs, _ = iter_.next()
-                xs = (np.reshape(xs, [batch_size, image_size, image_size, 3]) / 255.0 - 0.5) * 2.0
+                xs = (np.reshape(xs, [batch_size * num_gpus, image_size, image_size, 3]) / 255.0 - 0.5) * 2.0
 
                 # xs, _ = mnist.train.next_batch(batch_size)
                 # Transform it to be between -1 and 1
