@@ -81,9 +81,9 @@ def train_infogan():
 
         for i in xrange(num_gpus):
                 with tf.device('/gpu:%d' % i):
-                    with tf.name_scope('Tower_%d' % (i)):
+                    with tf.name_scope('Tower_%d' % (i)) as scope:
 
-                        d_loss, g_loss, q_loss, Gz = tower_loss(real_in_list[i * batch_size:(i + 1) * batch_size, :], z_lat)
+                        d_loss, g_loss, q_loss, Gz = tower_loss(scope, real_in_list[i * batch_size:(i + 1) * batch_size, :], z_lat)
 
                         tvars = tf.trainable_variables()
                         gen_vars = [v for v in tvars if v.name.startswith("generator/")]
@@ -144,7 +144,7 @@ def train_infogan():
                 _, gLoss = sess.run([update_G, mgloss])
                 _, qLoss = sess.run([update_Q, mqloss])  # Update to optimize mutual information.
 
-                if i % 100 == 0:
+                if i % 1 == 0:
                     print "epoch: " + str(epoch) + " Gen Loss: " + str(gLoss) + " Disc Loss: " + str(dLoss) + " Q Losses: " + str(qLoss)
                     # Generate another z batch
                     z_sample = np.random.uniform(-1.0, 1.0, size=[batch_size * num_gpus, z_size]).astype(np.float32)
@@ -173,44 +173,44 @@ def train_infogan():
             print "Saved Model"
 
 
-def tower_loss(real_in, z_lat=None):
+def tower_loss(scope, real_in, z_lat=None):
+    with scope:
+        if z_lat is None:
+            zs = np.random.uniform(-1.0, 1.0, size=[batch_size, z_size]).astype(np.float32)
+            lcont = np.random.uniform(-1, 1, [batch_size, number_continuous])
 
-    if z_lat is None:
-        zs = np.random.uniform(-1.0, 1.0, size=[batch_size, z_size]).astype(np.float32)
-        lcont = np.random.uniform(-1, 1, [batch_size, number_continuous])
+            lcat = np.random.randint(0, 10, [batch_size, ])  # Generate random c batch
+            latent_oh = np.zeros((batch_size, 10))
+            latent_oh[np.arange(batch_size), lcat] = 1
 
-        lcat = np.random.randint(0, 10, [batch_size, ])  # Generate random c batch
-        latent_oh = np.zeros((batch_size, 10))
-        latent_oh[np.arange(batch_size), lcat] = 1
+            # Concatenate all c and z variables.
+            z_lat = np.concatenate([latent_oh, zs, lcont], 1).astype(np.float32)
 
-        # Concatenate all c and z variables.
-        z_lat = np.concatenate([latent_oh, zs, lcont], 1).astype(np.float32)
+        Gz = infostyle_util.generator(z_lat)  # Generates images from random z vectors
+        # Produces probabilities for real images
+        Dx, _, _ = infostyle_util.discriminator(real_in)
+        # Produces probabilities for generator images
+        Dg, QgCat, QgCont = infostyle_util.discriminator(Gz, reuse=True)
 
-    Gz = infostyle_util.generator(z_lat)  # Generates images from random z vectors
-    # Produces probabilities for real images
-    Dx, _, _ = infostyle_util.discriminator(real_in)
-    # Produces probabilities for generator images
-    Dg, QgCat, QgCont = infostyle_util.discriminator(Gz, reuse=True)
+        # These functions together define the optimization objective of the GAN.
+        # This optimizes the discriminator.
+        d_loss = -tf.reduce_mean(tf.log(Dx) + tf.log(1. - Dg), name='dloss')
+        g_loss = -tf.reduce_mean(tf.log((Dg / (1 - Dg))), name='gloss')  # KL Divergence optimizer
+        # d_loss = tf.Print(d_loss, [d_loss], 'd_loss = ', summarize=-1)
 
-    # These functions together define the optimization objective of the GAN.
-    # This optimizes the discriminator.
-    d_loss = -tf.reduce_mean(tf.log(Dx) + tf.log(1. - Dg), name='dloss')
-    g_loss = -tf.reduce_mean(tf.log((Dg / (1 - Dg))), name='gloss')  # KL Divergence optimizer
-    # d_loss = tf.Print(d_loss, [d_loss], 'd_loss = ', summarize=-1)
+        # Combine losses for each of the categorical variables.
+        cat_losses = []
+        cat_loss = -tf.reduce_sum(z_lat[:, 0:categorical_list] * tf.log(QgCat[0]), reduction_indices=1)
+        cat_losses.append(cat_loss)
 
-    # Combine losses for each of the categorical variables.
-    cat_losses = []
-    cat_loss = -tf.reduce_sum(z_lat[:, 0:categorical_list] * tf.log(QgCat[0]), reduction_indices=1)
-    cat_losses.append(cat_loss)
+        # Combine losses for each of the continous variables.
+        q_cont_loss = tf.reduce_sum(0.5 * tf.square(z_lat[:, categorical_list + z_size:] - QgCont), reduction_indices=1)
 
-    # Combine losses for each of the continous variables.
-    q_cont_loss = tf.reduce_sum(0.5 * tf.square(z_lat[:, categorical_list + z_size:] - QgCont), reduction_indices=1)
+        q_cont_loss = tf.reduce_mean(q_cont_loss)
+        q_cat_loss = tf.reduce_mean(cat_losses)
+        q_loss = tf.add(q_cat_loss, q_cont_loss, name='qloss')
 
-    q_cont_loss = tf.reduce_mean(q_cont_loss)
-    q_cat_loss = tf.reduce_mean(cat_losses)
-    q_loss = tf.add(q_cat_loss, q_cont_loss, name='qloss')
-
-    return d_loss, g_loss, q_loss, Gz
+        return d_loss, g_loss, q_loss, Gz
 
 
 if __name__ == '__main__':
