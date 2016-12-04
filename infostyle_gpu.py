@@ -133,6 +133,8 @@ def train_infogan():
 
                 # Draw a sample batch from MNIST dataset.
                 xs, _ = iter_.next()
+                xs = (np.reshape(xs, [batch_size, image_size, image_size, 3]) / 255.0 - 0.5) * 2.0
+
                 # xs, _ = mnist.train.next_batch(batch_size)
                 # Transform it to be between -1 and 1
                 # xs = np.lib.pad(xs, ((0, 0), (2, 2), (2, 2), (0, 0)), 'constant', constant_values=(-1, -1))  # Pad the images so the are 32x32
@@ -172,8 +174,6 @@ def train_infogan():
 
 
 def tower_loss(real_in, z_lat=None):
-
-    real_in = (np.reshape(real_in, [batch_size, image_size, image_size, 3]) / 255.0 - 0.5) * 2.0
 
     if z_lat is None:
         zs = np.random.uniform(-1.0, 1.0, size=[batch_size, z_size]).astype(np.float32)
