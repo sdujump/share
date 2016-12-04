@@ -152,7 +152,7 @@ def train_infogan():
         epoch = 0
         while epoch < num_epochs:
             iter_ = infostyle_util.data_iterator(images, filenames, batch_size * num_gpus)
-            for i in tqdm.tqdm(range(total_batch)):
+            for i in xrange(total_batch):
                 # Generate a random z batch
                 zs = np.random.uniform(-1.0, 1.0, size=[batch_size * num_gpus, z_size]).astype(np.float32)
                 lcont = np.random.uniform(-1, 1, [batch_size * num_gpus, number_continuous])
