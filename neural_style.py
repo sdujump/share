@@ -119,7 +119,7 @@ def stylize():
     # random = tf.random_normal(content_holder.get_shape().as_list())
     # random = tf.Variable(tf.random_normal(content_holder.get_shape().as_list(), 0, 1, dtype=tf.float32), name='random', trainable=False)
     # opt_image = tf.Variable(0.4 * random + 0.6 * content_holder, name='opt')
-    opt_image = tf.Variable(tf.zeros(content_holder.get_shape().as_list()) + content_holder, name='opt')
+    opt_image = tf.Variable(content_holder, name='opt')
 
     style_features_t = get_style_features(style_holder, style_layers)
     content_features_t = get_content_features(content_holder, content_layers)
@@ -145,10 +145,7 @@ def stylize():
     grads = train_op.compute_gradients(total_loss, tvars)
     update = train_op.apply_gradients(grads)
     # saver = tf.train.Saver(tf.all_variables())
-    init = tf.initialize_all_variables()
     sess = tf.Session()
-    sess.run(init)
-
     for i in xrange(len(style_names)):
         style_image = (scipy.misc.imread(style_names[i], mode='RGB') / 255.0 - 0.5) * 2.0
         style_image = np.expand_dims(style_image, 0)
@@ -159,6 +156,8 @@ def stylize():
             # content_image = np.reshape(content_image, [1, 256, 256, 3]) - mean_pixel
             content_image = (np.reshape(content_image, [1, 256, 256, 3]) / 255.0 - 0.5) * 2.0
             image_t = content_image
+            init = tf.initialize_all_variables()
+            sess.run(init, feed_dict={content_holder: image_t})
             for step in tqdm.tqdm(xrange(FLAGS.NUM_ITERATIONS)):
                 _, loss_t, image_t = sess.run([update, total_loss, opt_image], feed_dict={content_holder: image_t, style_holder: style_image})
                 if step % 10 == 0:
