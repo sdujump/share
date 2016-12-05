@@ -116,10 +116,10 @@ def stylize():
 
     style_holder = tf.placeholder(shape=[1, None, None, 3], dtype=tf.float32)  # Real images
     content_holder = tf.placeholder(shape=[1, 256, 256, 3], dtype=tf.float32)  # Random vector
-    random = tf.random_normal(content_holder.get_shape().as_list())
-
-    random = tf.Variable(tf.random_normal(content_holder.get_shape().as_list(), 0, 0.1, dtype=tf.float32), name='random')
-    opt_image = 0.4 * random + 0.6 * content_holder
+    # random = tf.random_normal(content_holder.get_shape().as_list())
+    # random = tf.Variable(tf.random_normal(content_holder.get_shape().as_list(), 0, 1, dtype=tf.float32), name='random', trainable=False)
+    # opt_image = tf.Variable(0.4 * random + 0.6 * content_holder, name='opt')
+    opt_image = tf.Variable(tf.zeros(content_holder.get_shape().as_list()) + content_holder, name='opt')
 
     style_features_t = get_style_features(style_holder, style_layers)
     content_features_t = get_content_features(content_holder, content_layers)
@@ -150,19 +150,21 @@ def stylize():
     sess.run(init)
 
     for i in xrange(len(style_names)):
-        style_image = scipy.misc.imread(style_names[i], mode='RGB') - mean_pixel
+        style_image = (scipy.misc.imread(style_names[i], mode='RGB') / 255.0 - 0.5) * 2.0
         style_image = np.expand_dims(style_image, 0)
         content_iter = data_iterator(content_images, content_names, 1)
         for j in xrange(len(content_images)):
             content_image, content_name = content_iter.next()
             print 'style: ' + style_names[i] + ' content: ' + content_name[0]
-            content_image = np.reshape(content_image, [1, 256, 256, 3]) - mean_pixel
+            # content_image = np.reshape(content_image, [1, 256, 256, 3]) - mean_pixel
+            content_image = (np.reshape(content_image, [1, 256, 256, 3]) / 255.0 - 0.5) * 2.0
+            image_t = content_image
             for step in tqdm.tqdm(xrange(FLAGS.NUM_ITERATIONS)):
-                _, loss_t, image_t = sess.run([update, total_loss, opt_image], feed_dict={content_holder: content_image, style_holder: style_image})
+                _, loss_t, image_t = sess.run([update, total_loss, opt_image], feed_dict={content_holder: image_t, style_holder: style_image})
                 if step % 10 == 0:
                     print 'step: ' + str(step) + ' loss: ' + str(loss_t)
             # image_t = sess.run(opt_image)
-            scipy.misc.imsave('coco_style/' + content_name[0][5:-4] + '-%s.jpg' % (i), np.squeeze(image_t) + mean_pixel)
+            scipy.misc.imsave('coco_style/' + content_name[0][5:-4] + '-%s.jpg' % (i), (np.squeeze(image_t) + 1) / 2)
 
 
 def main(argv=None):
