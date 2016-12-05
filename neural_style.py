@@ -211,5 +211,5 @@ def main(argv=None):
 
 if __name__ == '__main__':
     # tf.app.run()
-    get_dataset('coco', 256, channel=3)
-    # stylize()
+    # get_dataset('coco', 256, channel=3)
+    stylize()
