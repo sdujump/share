@@ -171,7 +171,7 @@ def train_infogan():
                 xs = (np.reshape(xs, [batch_size * num_gpus, image_size, image_size, 3]) / 255.0 - 0.5) * 2.0
                 # xs = np.lib.pad(xs, ((0, 0), (2, 2), (2, 2), (0, 0)), 'constant', constant_values=(-1, -1))  # Pad the images so the are 32x32
 
-                _, dLoss = sess.run([update_D, mdloss], feed_dict={z_lat: zlat, real_in: xs})  # Update the discriminator
+                _, dLoss = sess.run([update_D, tower_dloss], feed_dict={z_lat: zlat, real_in: xs})  # Update the discriminator
                 # Update the generator, twice for good measure.
                 _, gLoss = sess.run([update_G, mgloss], feed_dict={z_lat: zlat})
                 _, qLoss = sess.run([update_Q, mqloss], feed_dict={z_lat: zlat})  # Update to optimize mutual information.
