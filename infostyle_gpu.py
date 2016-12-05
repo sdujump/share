@@ -169,9 +169,9 @@ def train_infogan():
 
                     # Concatenate all c and z variables.
                     zlat = np.concatenate([latent_oh, z_sample, lcont_sample], 1).astype(np.float32)
-                    # zlats = np.concatenate([zlat, zlat, zlat, zlat], 0).astype(np.float32)
+                    zlats = np.concatenate([zlat, zlat, zlat, zlat], 0).astype(np.float32)
                     # Use new z to get sample images from generator.
-                    samples = sess.run(Gz, feed_dict={z_lat: zlat})
+                    samples = sess.run(Gz, feed_dict={z_lat: zlats})
                     if not os.path.exists(sample_directory):
                         os.makedirs(sample_directory)
                     # Save sample generator images for viewing training
