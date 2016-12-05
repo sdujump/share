@@ -162,7 +162,7 @@ def stylize():
                 if step % 10 == 0:
                     print 'step: ' + str(step) + ' loss: ' + str(loss_t)
             # image_t = sess.run(opt_image)
-            scipy.misc.imsave('coco_style/' + content_name[0][5:-4] + '-%s.jpg' % (i), image_t + mean_pixel)
+            scipy.misc.imsave('coco_style/' + content_name[0][5:-4] + '-%s.jpg' % (i), np.squeeze(image_t) + mean_pixel)
 
 
 def main(argv=None):
