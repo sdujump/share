@@ -149,7 +149,7 @@ def train_infogan():
                 # Transform it to be between -1 and 1
                 # xs = np.lib.pad(xs, ((0, 0), (2, 2), (2, 2), (0, 0)), 'constant', constant_values=(-1, -1))  # Pad the images so the are 32x32
 
-                _, dLoss = sess.run([update_D, mdloss], feed_dict={real_in_list: xs, z_lat: zlat})  # Update the discriminator
+                _, dLoss = sess.run([update_D, tower_dloss], feed_dict={real_in_list: xs, z_lat: zlat})  # Update the discriminator
                 # Update the generator, twice for good measure.
                 _, gLoss = sess.run([update_G, mgloss], feed_dict={z_lat: zlat})
                 _, qLoss = sess.run([update_Q, mqloss], feed_dict={z_lat: zlat})  # Update to optimize mutual information.
@@ -169,14 +169,14 @@ def train_infogan():
 
                     # Concatenate all c and z variables.
                     zlat = np.concatenate([latent_oh, z_sample, lcont_sample], 1).astype(np.float32)
-                    zlats = np.concatenate([zlat, zlat, zlat, zlat], 0).astype(np.float32)
+                    # zlats = np.concatenate([zlat, zlat, zlat, zlat], 0).astype(np.float32)
                     # Use new z to get sample images from generator.
-                    samples = sess.run(Outputs, feed_dict={z_lat: zlats})
+                    samples = sess.run(Gz, feed_dict={z_lat: zlat})
                     if not os.path.exists(sample_directory):
                         os.makedirs(sample_directory)
                     # Save sample generator images for viewing training
                     # progress.
-                    infostyle_util.save_images(np.reshape(samples[0:batch_size * num_gpus], [batch_size * num_gpus, image_size, image_size, 3]), [10 * tempg, 10 * tempg], sample_directory + '/fig' + str(epoch) + str(i) + '.png')
+                    infostyle_util.save_images(np.reshape(samples[0:batch_size], [batch_size, image_size, image_size, 3]), [10 * tempg, 10 * tempg], sample_directory + '/fig' + str(epoch) + str(i) + '.png')
             epoch += 1
             if not os.path.exists(model_directory):
                 os.makedirs(model_directory)
