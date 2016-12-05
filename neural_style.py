@@ -7,6 +7,11 @@ from os.path import isfile, join
 import numpy as np
 import tqdm  # making loops prettier
 import scipy.misc
+import os
+from tensorflow.python.client import device_lib
+
+os.environ["CUDA_VISIBLE_DEVICES"] = "0"
+print device_lib.list_local_devices()
 
 tf.app.flags.DEFINE_integer("CONTENT_WEIGHT", 5e0, "Weight for content features loss")
 tf.app.flags.DEFINE_integer("STYLE_WEIGHT", 1e2, "Weight for style features loss")
@@ -153,9 +158,10 @@ def stylize():
             print 'style: ' + style_names[i] + ' content: ' + content_name[0]
             content_image = np.reshape(content_image, [1, 256, 256, 3]) - mean_pixel
             for step in tqdm.tqdm(xrange(FLAGS.NUM_ITERATIONS)):
-                _, loss_t = sess.run([update, total_loss], feed_dict={content_holder: content_image, style_holder: style_image})
-                print 'step: ' + str(step) + ' loss: ' + str(loss_t)
-            image_t = sess.run(opt_image)
+                _, loss_t, image_t = sess.run([update, total_loss, opt_image], feed_dict={content_holder: content_image, style_holder: style_image})
+                if step % 10 == 0:
+                    print 'step: ' + str(step) + ' loss: ' + str(loss_t)
+            # image_t = sess.run(opt_image)
             scipy.misc.imsave('coco_style/' + content_name[0][5:-4] + '-%s.jpg' % (i), image_t + mean_pixel)
 
 
