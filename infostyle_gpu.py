@@ -33,7 +33,7 @@ def show_variables(variales):
 
 # tf.reset_default_graph()
 
-num_gpus = 1
+num_gpus = 4
 tempg = np.sqrt(num_gpus).astype(np.int16)
 
 z_size = 64  # Size of initial z vector used for generator.
