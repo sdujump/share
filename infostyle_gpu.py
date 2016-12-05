@@ -33,7 +33,7 @@ def show_variables(variales):
 
 # tf.reset_default_graph()
 
-num_gpus = 4
+num_gpus = 1
 tempg = np.sqrt(num_gpus).astype(np.int16)
 
 z_size = 64  # Size of initial z vector used for generator.
@@ -131,6 +131,16 @@ def train_infogan():
             iter_ = infostyle_util.data_iterator(images, filenames, batch_size * num_gpus)
             for i in xrange(total_batch):
 
+                zs = np.random.uniform(-1.0, 1.0, size=[batch_size * num_gpus, z_size]).astype(np.float32)
+                lcont = np.random.uniform(-1, 1, [batch_size * num_gpus, number_continuous])
+
+                lcat = np.random.randint(0, 10, [batch_size * num_gpus, ])  # Generate random c batch
+                latent_oh = np.zeros((batch_size * num_gpus, 10))
+                latent_oh[np.arange(batch_size * num_gpus), lcat] = 1
+
+                # Concatenate all c and z variables.
+                zlat = np.concatenate([latent_oh, zs, lcont], 1).astype(np.float32)
+
                 # Draw a sample batch from MNIST dataset.
                 xs, _ = iter_.next()
                 xs = (np.reshape(xs, [batch_size * num_gpus, image_size, image_size, 3]) / 255.0 - 0.5) * 2.0
@@ -139,28 +149,29 @@ def train_infogan():
                 # Transform it to be between -1 and 1
                 # xs = np.lib.pad(xs, ((0, 0), (2, 2), (2, 2), (0, 0)), 'constant', constant_values=(-1, -1))  # Pad the images so the are 32x32
 
-                _, dLoss = sess.run([update_D, mdloss], feed_dict={real_in_list: xs})  # Update the discriminator
+                _, dLoss = sess.run([update_D, mdloss], feed_dict={real_in_list: xs, z_lat: zlat})  # Update the discriminator
                 # Update the generator, twice for good measure.
-                _, gLoss = sess.run([update_G, mgloss])
-                _, qLoss = sess.run([update_Q, mqloss])  # Update to optimize mutual information.
+                _, gLoss = sess.run([update_G, mgloss], feed_dict={z_lat: zlat})
+                _, qLoss = sess.run([update_Q, mqloss], feed_dict={z_lat: zlat})  # Update to optimize mutual information.
 
-                if i % 1 == 0:
+                if i % 100 == 0:
                     print "epoch: " + str(epoch) + " Gen Loss: " + str(gLoss) + " Disc Loss: " + str(dLoss) + " Q Losses: " + str(qLoss)
                     # Generate another z batch
-                    z_sample = np.random.uniform(-1.0, 1.0, size=[batch_size * num_gpus, z_size]).astype(np.float32)
-                    lcat_sample = np.array([e for e in range(10) for tempi in range(10 * num_gpus)])
-                    latent_oh = np.zeros((batch_size * num_gpus, 10))
-                    latent_oh[np.arange(batch_size * num_gpus), lcat_sample] = 1
+                    z_sample = np.random.uniform(-1.0, 1.0, size=[batch_size, z_size]).astype(np.float32)
+                    lcat_sample = np.array([e for e in range(10) for tempi in range(10)])
+                    latent_oh = np.zeros((batch_size, 10))
+                    latent_oh[np.arange(batch_size), lcat_sample] = 1
 
-                    aa = np.reshape(np.array([[(ee / 4.5 - tempg)] for ee in range(10 * tempg) for tempj in range(10 * tempg)]), [10 * tempg, 10 * tempg]).T
-                    bb = np.reshape(aa, [batch_size * num_gpus, 1])
+                    aa = np.reshape(np.array([[(ee / 4.5 - 1)] for ee in range(10) for tempj in range(10)]), [10, 10]).T
+                    bb = np.reshape(aa, [batch_size, 1])
                     cc = np.zeros_like(bb)
                     lcont_sample = np.hstack([bb, cc])
 
                     # Concatenate all c and z variables.
                     zlat = np.concatenate([latent_oh, z_sample, lcont_sample], 1).astype(np.float32)
+                    zlats = np.concatenate([zlat, zlat, zlat, zlat], 0).astype(np.float32)
                     # Use new z to get sample images from generator.
-                    samples = sess.run(Outputs, feed_dict={z_lat: zlat})
+                    samples = sess.run(Outputs, feed_dict={z_lat: zlats})
                     if not os.path.exists(sample_directory):
                         os.makedirs(sample_directory)
                     # Save sample generator images for viewing training
@@ -173,17 +184,7 @@ def train_infogan():
             print "Saved Model"
 
 
-def tower_loss(real_in, z_lat=None):
-    if z_lat is None:
-        zs = np.random.uniform(-1.0, 1.0, size=[batch_size, z_size]).astype(np.float32)
-        lcont = np.random.uniform(-1, 1, [batch_size, number_continuous])
-
-        lcat = np.random.randint(0, 10, [batch_size, ])  # Generate random c batch
-        latent_oh = np.zeros((batch_size, 10))
-        latent_oh[np.arange(batch_size), lcat] = 1
-
-        # Concatenate all c and z variables.
-        z_lat = np.concatenate([latent_oh, zs, lcont], 1).astype(np.float32)
+def tower_loss(real_in, z_lat):
 
     Gz = infostyle_util.generator(z_lat)  # Generates images from random z vectors
     # Produces probabilities for real images
