@@ -83,7 +83,7 @@ def train_infogan():
                 with tf.device('/gpu:%d' % i):
                     with tf.name_scope('Tower_%d' % (i)):
 
-                        d_loss, g_loss, q_loss, Gz = tower_loss(real_in_list[i * batch_size:(i + 1) * batch_size, :], z_lat)
+                        d_loss, g_loss, q_loss, Gz = tower_loss(real_in_list[i * batch_size:(i + 1) * batch_size, :], z_lat[i * batch_size:(i + 1) * batch_size, :])
 
                         tvars = tf.trainable_variables()
                         gen_vars = [v for v in tvars if v.name.startswith("generator/")]
