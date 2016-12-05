@@ -147,10 +147,21 @@ def train_infogan():
                 _, gLoss = sess.run([update_G, mgloss], feed_dict={z_lat: zlat})
                 _, qLoss = sess.run([update_Q, mqloss], feed_dict={z_lat: zlat})  # Update to optimize mutual information.
 
-                if i % 100 == 0:
+                if i % 50 == 0:
                     print "epoch: " + str(epoch) + " Gen Loss: " + str(gLoss) + " Disc Loss: " + str(dLoss) + " Q Losses: " + str(qLoss)
                     # Generate another z batch
-                    zlat = latent_prior(z_size, batch_size, num_gpus)
+                    z_sample = np.random.uniform(-1.0, 1.0, size=[batch_size, z_size]).astype(np.float32)
+                    lcat_sample = np.array([e for e in range(10) for tempi in range(10)])
+                    latent_oh = np.zeros((batch_size, 10))
+                    latent_oh[np.arange(batch_size), lcat_sample] = 1
+
+                    aa = np.reshape(np.array([[(ee / 4.5 - 1)] for ee in range(10) for tempj in range(10)]), [10, 10]).T
+                    bb = np.reshape(aa, [batch_size, 1])
+                    cc = np.zeros_like(bb)
+                    lcont_sample = np.hstack([bb, cc])
+
+                    # Concatenate all c and z variables.
+                    zlat = np.concatenate([latent_oh, z_sample, lcont_sample], 1).astype(np.float32)
                     zlats = np.concatenate([zlat, zlat, zlat, zlat], 0).astype(np.float32)
                     # Use new z to get sample images from generator.
                     samples = sess.run(Gz, feed_dict={z_lat: zlats})
