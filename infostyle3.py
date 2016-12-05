@@ -8,7 +8,7 @@ import h5py  # for reading our dataset
 from tensorflow.python.client import device_lib
 import tqdm  # making loops prettier
 
-os.environ["CUDA_VISIBLE_DEVICES"] = "0"
+os.environ["CUDA_VISIBLE_DEVICES"] = "0, 1, 2, 3"
 print device_lib.list_local_devices()
 
 tf.app.flags.DEFINE_string("train_image_dir", "train_images", "")
@@ -34,7 +34,7 @@ def show_variables(variales):
 
 # tf.reset_default_graph()
 
-num_gpus = 1
+num_gpus = 4
 tempg = np.sqrt(num_gpus).astype(np.int16)
 
 z_size = 64  # Size of initial z vector used for generator.
