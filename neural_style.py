@@ -76,7 +76,7 @@ def total_variation_loss(layer):
 
 
 def gram(layer):
-    shape = tf.shape(layer)
+    shape = layer.get_shape().as_list()
     num_filters = shape[3]
     size = tf.size(layer)
     filters = tf.reshape(layer, tf.pack([-1, num_filters]))
@@ -144,7 +144,7 @@ def fast_style():
         for layer in style_layers:
             generated_vgg = generated_net[layer]
             style_vgg = style_net[layer]
-            size = tf.square(tf.shape(style_vgg)[3])
+            size = tf.square(style_vgg.get_shape().as_list()[3])
             # for style_batch in style_gram:
             style_loss += tf.nn.l2_loss(tf.reduce_sum(gram(generated_vgg) - gram(style_vgg), 0)) / tf.to_float(size)
         style_loss = style_loss / len(style_layers)
@@ -179,11 +179,11 @@ def fast_style():
                 content_image = np.reshape(content_image, [batch_size, 256, 256, 3]) - mean_pixel
                 _, loss_t = sess.run([update, total_loss], feed_dict={content_holder: content_image, style_holder: style_image})
 
-                if i % 10 == 0:
-                    print 'epoch: ' + str(epoch) + ' loss: ' + loss_t
+                if i % 100 == 0:
+                    print 'epoch: ' + str(epoch) + ' loss: ' + str(loss_t)
                     output_t = sess.run(output_format, feed_dict={content_holder: content_image})
                     for i, raw_image in enumerate(output_t):
-                        scipy.misc.imsave('test/out%s-%s.png' % (i + 1), raw_image)
+                        scipy.misc.imsave('test/out%s-%s.png' % (epoch, i + 1), raw_image)
             if epoch % 3 == 0:
                 if not os.path.exists(FLAGS.MODEL_DIR):
                     os.makedirs(FLAGS.MODEL_DIR)
