@@ -9,6 +9,7 @@ import tqdm  # making loops prettier
 import scipy.misc
 import os
 from tensorflow.python.client import device_lib
+import neural_model
 
 os.environ["CUDA_VISIBLE_DEVICES"] = "0"
 print device_lib.list_local_devices()
@@ -22,6 +23,7 @@ tf.app.flags.DEFINE_string("STYLE_LAYERS", "relu1_2,relu2_2,relu3_2,relu4_2", "W
 tf.app.flags.DEFINE_float("STYLE_SCALE", 1.0, "Scale styles. Higher extracts smaller features")
 tf.app.flags.DEFINE_float("LEARNING_RATE", 10., "Learning rate")
 tf.app.flags.DEFINE_integer("NUM_ITERATIONS", 300, "Number of iterations")
+tf.app.flags.DEFINE_string("MODEL_DIR", "style_model", "path")
 
 FLAGS = tf.app.flags.FLAGS
 
@@ -99,6 +101,95 @@ def get_content_features(content_image, content_layers):
     for layer in content_layers:
         layers.append(net[layer])
     return layers
+
+
+def fast_style():
+    batch_size = 4
+    num_epochs = 50
+    style_layers = FLAGS.STYLE_LAYERS.split(',')
+    content_layers = FLAGS.CONTENT_LAYERS.split(',')
+    with h5py.File(''.join(['datasets/coco-256.h5']), 'r') as hf:
+        content_images = hf['images'].value
+        content_names = hf['filenames'].value
+
+    total_batch = int(np.floor(len(content_images) / (batch_size)))
+
+    total_loss = 0
+    total_content = 0
+    total_style = 0
+    total_variation = 0
+
+    style_names = [join('styles', f) for f in listdir('styles') if isfile(join('styles', f)) & f.lower().endswith('jpg')]
+
+    style_holder = tf.placeholder(shape=[1, None, None, 3], dtype=tf.float32)  # Real images
+    content_holder = tf.placeholder(shape=[batch_size, 256, 256, 3], dtype=tf.float32)  # Random vector
+
+    generated = neural_model.net(content_holder)
+
+    style_net, _ = vgg.net(FLAGS.VGG_PATH, style_holder)
+    content_net, _ = vgg.net(FLAGS.VGG_PATH, content_holder)
+
+    for i in range(len(generated)):
+        generated_net, _ = vgg.net(FLAGS.VGG_PATH, generated[i])
+
+        content_loss = 0
+        for layer in content_layers:
+            content_vgg = content_net[layer]
+            generated_vgg = generated_net[layer]
+            size = tf.size(generated_vgg)
+            content_loss += tf.nn.l2_loss(generated_vgg - content_vgg) / tf.to_float(size)
+        content_loss = content_loss / len(content_layers)
+
+        style_loss = 0
+        for layer in style_layers:
+            generated_vgg = generated_net[layer]
+            style_vgg = style_net[layer]
+            size = tf.square(tf.shape(style_vgg)[3])
+            # for style_batch in style_gram:
+            style_loss += tf.nn.l2_loss(tf.reduce_sum(gram(generated_vgg) - gram(style_vgg), 0)) / tf.to_float(size)
+        style_loss = style_loss / len(style_layers)
+
+        total_content += content_loss
+        total_style += style_loss
+        total_variation += total_variation_loss(generated[i])
+
+    total_loss = FLAGS.STYLE_WEIGHT * total_style + FLAGS.CONTENT_WEIGHT * total_content + FLAGS.TV_WEIGHT * total_variation
+    output_format = tf.saturate_cast(tf.concat(0, [generated[-1], content_holder]) + mean_pixel, tf.uint8)
+
+    tvars = tf.trainable_variables()
+    train_op = tf.train.AdamOptimizer(1e-3)
+    grads = train_op.compute_gradients(total_loss, tvars)
+    update = train_op.apply_gradients(grads)
+
+    saver = tf.train.Saver(tf.all_variables())
+    sess = tf.Session()
+    sess.run(tf.initialize_all_variables())
+    sess.run(tf.initialize_local_variables())
+
+    for i in xrange(len(style_names)):
+        # style_image = (scipy.misc.imread(style_names[i], mode='RGB') / 255.0 - 0.5) * 2.0
+        style_image = scipy.misc.imread(style_names[i], mode='RGB') - mean_pixel
+        style_image = np.expand_dims(style_image, 0)
+        epoch = 0
+        while epoch < num_epochs:
+            content_iter = data_iterator(content_images, content_names, batch_size)
+            for i in tqdm.tqdm(xrange(total_batch)):
+                content_image, content_name = content_iter.next()
+                print 'style: ' + style_names[i] + ' content: ' + content_name[0]
+                content_image = np.reshape(content_image, [batch_size, 256, 256, 3]) - mean_pixel
+                _, loss_t = sess.run([update, total_loss], feed_dict={content_holder: content_image, style_holder: style_image})
+
+                if i % 10 == 0:
+                    print 'epoch: ' + str(epoch) + ' loss: ' + loss_t
+                    output_t = sess.run(output_format, feed_dict={content_holder: content_image})
+                    for i, raw_image in enumerate(output_t):
+                        scipy.misc.imsave('test/out%s-%s.png' % (i + 1), raw_image)
+            if epoch % 3 == 0:
+                if not os.path.exists(FLAGS.MODEL_DIR):
+                    os.makedirs(FLAGS.MODEL_DIR)
+                saver.save(sess, FLAGS.MODEL_DIR + '/model-epoch-' + str(epoch) + '.cptk')
+                print "Saved Model"
+            epoch += 1
 
 
 def stylize():
@@ -218,4 +309,4 @@ def main(argv=None):
 if __name__ == '__main__':
     # tf.app.run()
     # get_dataset('coco', 256, channel=3)
-    stylize()
+    fast_style()
