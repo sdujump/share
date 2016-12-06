@@ -166,6 +166,7 @@ def stylize():
             # image_t = sess.run(opt_image)
             # scipy.misc.imsave('coco_style/' + content_name[0][5:-4] + '-%s.jpg' % (i), (np.squeeze(image_t) + 1) / 2)
             scipy.misc.imsave('coco_style/' + content_name[0][5:-4] + '-%s.jpg' % (i), np.squeeze(image_t) + mean_pixel)
+            scipy.misc.imsave('coco_style/' + content_name[0][5:-4] + '.jpg', np.squeeze(content_image) + mean_pixel)
 
 
 def main(argv=None):
