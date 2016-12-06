@@ -155,11 +155,11 @@ def stylize():
             print 'style: ' + style_names[i] + ' content: ' + content_name[0]
             # content_image = np.reshape(content_image, [1, 256, 256, 3]) - mean_pixel
             content_image = (np.reshape(content_image, [1, 256, 256, 3]) / 255.0 - 0.5) * 2.0
-            image_t = content_image
+            # image_t = content_image
             init = tf.initialize_all_variables()
-            sess.run(init, feed_dict={content_holder: image_t})
+            sess.run(init, feed_dict={content_holder: content_image})
             for step in tqdm.tqdm(xrange(FLAGS.NUM_ITERATIONS)):
-                _, loss_t, image_t = sess.run([update, total_loss, opt_image], feed_dict={content_holder: image_t, style_holder: style_image})
+                _, loss_t, image_t = sess.run([update, total_loss, opt_image], feed_dict={content_holder: content_image, style_holder: style_image})
                 if step % 10 == 0:
                     print 'step: ' + str(step) + ' loss: ' + str(loss_t)
             # image_t = sess.run(opt_image)
