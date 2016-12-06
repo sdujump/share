@@ -16,7 +16,7 @@ os.environ["CUDA_VISIBLE_DEVICES"] = "0"
 print device_lib.list_local_devices()
 
 tf.app.flags.DEFINE_integer("CONTENT_WEIGHT", 5, "5e0Weight for content features loss")
-tf.app.flags.DEFINE_integer("STYLE_WEIGHT", 50, "1e2Weight for style features loss")
+tf.app.flags.DEFINE_integer("STYLE_WEIGHT", 30, "1e2Weight for style features loss")
 tf.app.flags.DEFINE_integer("TV_WEIGHT", 1e-5, "Weight for total variation loss")
 tf.app.flags.DEFINE_string("VGG_PATH", "imagenet-vgg-verydeep-19.mat", "Path to vgg model weights")
 tf.app.flags.DEFINE_string("CONTENT_LAYERS", "relu3_4", "Which VGG layer to extract content loss from")
@@ -176,8 +176,8 @@ def fast_style():
 
     saver = tf.train.Saver(tf.all_variables())
     sess = tf.Session()
-    sess.run(tf.initialize_all_variables())
-    sess.run(tf.initialize_local_variables())
+    sess.run(tf.global_variables_initializer())
+    sess.run(tf.local_variables_initializer())
 
     for i in xrange(len(style_names)):
         print 'style: ' + style_names[i]
@@ -200,7 +200,7 @@ def fast_style():
             if epoch % 1 == 0:
                 if not os.path.exists(FLAGS.MODEL_DIR):
                     os.makedirs(FLAGS.MODEL_DIR)
-                saver.save(sess, FLAGS.MODEL_DIR + '/model-' + str(style_names[i][7:-4]) + '.ckpt')
+                saver.save(sess, FLAGS.MODEL_DIR + '/model-' + str(style_names[i][7:-4]) + '.ckpt', global_step=i, max_to_keep=0)
                 print "Saved Model"
             epoch += 1
 
