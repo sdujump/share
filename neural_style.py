@@ -167,23 +167,23 @@ def fast_style():
     sess.run(tf.initialize_local_variables())
 
     for i in xrange(len(style_names)):
+        print 'style: ' + style_names[i]
         # style_image = (scipy.misc.imread(style_names[i], mode='RGB') / 255.0 - 0.5) * 2.0
         style_image = scipy.misc.imread(style_names[i], mode='RGB') - mean_pixel
         style_image = np.expand_dims(style_image, 0)
         epoch = 0
         while epoch < num_epochs:
             content_iter = data_iterator(content_images, content_names, batch_size)
-            for i in tqdm.tqdm(xrange(total_batch)):
+            for j in tqdm.tqdm(xrange(total_batch)):
                 content_image, content_name = content_iter.next()
-                print 'style: ' + style_names[i] + ' content: ' + content_name[0]
                 content_image = np.reshape(content_image, [batch_size, 256, 256, 3]) - mean_pixel
                 _, loss_t = sess.run([update, total_loss], feed_dict={content_holder: content_image, style_holder: style_image})
 
-                if i % 100 == 0:
+                if j % 100 == 0:
                     print 'epoch: ' + str(epoch) + ' loss: ' + str(loss_t)
                     output_t = sess.run(output_format, feed_dict={content_holder: content_image})
-                    for i, raw_image in enumerate(output_t):
-                        scipy.misc.imsave('test/out%s-%s.png' % (epoch, i + 1), raw_image)
+                    for j, raw_image in enumerate(output_t):
+                        scipy.misc.imsave('test/out%s-%s.png' % (epoch, j + 1), raw_image)
             if epoch % 3 == 0:
                 if not os.path.exists(FLAGS.MODEL_DIR):
                     os.makedirs(FLAGS.MODEL_DIR)
