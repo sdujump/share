@@ -190,10 +190,10 @@ def fast_style():
             for j in tqdm.tqdm(xrange(total_batch)):
                 content_image, content_name = content_iter.next()
                 content_image = np.reshape(content_image, [batch_size, 256, 256, 3]) - mean_pixel
-                _, loss_t = sess.run([update, total_loss], feed_dict={content_holder: content_image, style_holder: style_image})
+                _, loss_t, loss_s, loss_c = sess.run([update, total_loss, total_style, total_content], feed_dict={content_holder: content_image, style_holder: style_image})
 
                 if j % 100 == 0:
-                    print 'epoch: ' + str(epoch) + ' loss: ' + str(loss_t)
+                    print 'epoch: ' + str(epoch) + ' loss: ' + str(loss_t) + ' loss_s: ' + str(loss_s) + ' loss_c: ' + str(loss_c)
                     output_t = sess.run(output_format, feed_dict={content_holder: content_image})
                     for j, raw_image in enumerate(output_t):
                         scipy.misc.imsave('test/out%s-%s.png' % (epoch, j + 1), raw_image)
