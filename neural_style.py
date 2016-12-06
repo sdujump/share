@@ -156,8 +156,8 @@ def fast_style():
         for layer in style_layers:
             generated_vgg = generated_net[layer]
             style_vgg = style_net[layer]
-            size = tf.size(style_vgg)
-            # size = tf.square(style_vgg.get_shape().as_list()[3])
+            # size = tf.size(style_vgg)
+            size = tf.square(style_vgg.get_shape().as_list()[3]) * batch_size
             # for style_batch in style_gram:
             style_loss += tf.nn.l2_loss(gram(generated_vgg) - gram(style_vgg)) / tf.to_float(size)
         style_loss = style_loss / len(style_layers)
