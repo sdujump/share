@@ -78,13 +78,24 @@ def total_variation_loss(layer):
 
 def gram(layer):
     shape = layer.get_shape().as_list()
+    num_images = shape[0]
+    width = shape[1]
+    height = shape[2]
+    num_filters = shape[3]
+    filters = tf.reshape(layer, tf.pack([num_images, -1, num_filters]))
+    grams = tf.batch_matmul(filters, filters, adj_x=True) / tf.to_float(width * height * num_filters)
+    return grams
+
+    '''
+def gram(layer):
+    shape = layer.get_shape().as_list()
     num_filters = shape[3]
     size = tf.size(layer)
     filters = tf.reshape(layer, tf.pack([-1, num_filters]))
     gram = tf.matmul(filters, filters, transpose_a=True) / tf.to_float(size)
 
     return gram
-
+'''
 # TODO: Different style scales per image.
 
 
@@ -146,9 +157,10 @@ def fast_style():
         for layer in style_layers:
             generated_vgg = generated_net[layer]
             style_vgg = style_net[layer]
-            size = tf.square(style_vgg.get_shape().as_list()[3])
+            size = tf.size(style_vgg)
+            # size = tf.square(style_vgg.get_shape().as_list()[3])
             # for style_batch in style_gram:
-            style_loss += tf.nn.l2_loss(tf.reduce_sum(gram(generated_vgg) - gram(style_vgg), 0)) / tf.to_float(size)
+            style_loss += tf.nn.l2_loss(gram(generated_vgg) - gram(style_vgg)) / tf.to_float(size)
         style_loss = style_loss / len(style_layers)
 
         total_content += content_loss
