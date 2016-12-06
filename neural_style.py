@@ -15,8 +15,8 @@ import model
 os.environ["CUDA_VISIBLE_DEVICES"] = "0"
 print device_lib.list_local_devices()
 
-tf.app.flags.DEFINE_integer("CONTENT_WEIGHT", 1, "5e0Weight for content features loss")
-tf.app.flags.DEFINE_integer("STYLE_WEIGHT", 1, "1e2Weight for style features loss")
+tf.app.flags.DEFINE_integer("CONTENT_WEIGHT", 5, "5e0Weight for content features loss")
+tf.app.flags.DEFINE_integer("STYLE_WEIGHT", 50, "1e2Weight for style features loss")
 tf.app.flags.DEFINE_integer("TV_WEIGHT", 1e-5, "Weight for total variation loss")
 tf.app.flags.DEFINE_string("VGG_PATH", "imagenet-vgg-verydeep-19.mat", "Path to vgg model weights")
 tf.app.flags.DEFINE_string("CONTENT_LAYERS", "relu4_2", "Which VGG layer to extract content loss from")
