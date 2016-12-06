@@ -76,7 +76,7 @@ def gen_v4(x):
         with tf.variable_scope('conv7_1'):
             conv7_1 = tf.nn.tanh(conv2d(conv6_1, 32, 3, 3, 1, with_bias=False))
         with tf.variable_scope('raw'):
-            raw = conv7_1 * 128.0 + 128.0
+            raw = conv7_1 * 127.5 + 127.5
         with tf.variable_scope('res1'):
             res1 = (raw - mean_pixel) * 0.4 + x * 0.6
         return res1
@@ -111,7 +111,7 @@ def gen_v3(x):
         with tf.variable_scope('deconv3'):
             deconv3 = tf.nn.tanh(conv2d_transpose(conv5_1, 96, 3, 8, 2))
         with tf.variable_scope('raw'):
-            raw = deconv3 * 128.0 + 128.0
+            raw = deconv3 * 127.5 + 127.5
         with tf.variable_scope('res3'):
             res3 = (raw - mean_pixel) * 0.4 + x * 0.6
         return res3

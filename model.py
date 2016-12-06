@@ -1,5 +1,8 @@
 import tensorflow as tf
 
+mean_pixel = [123.68, 116.779, 103.939]
+
+
 def conv2d(x, input_filters, output_filters, kernel, strides, mode='REFLECT'):
     with tf.variable_scope('conv') as scope:
 
@@ -105,7 +108,7 @@ def net(image, training):
     with tf.variable_scope('deconv3'): 
         deconv3 = tf.nn.tanh(instance_norm(conv2d(deconv2, 32, 3, 9, 1)))
 
-    y = (deconv3+1) * 127.5
+    y = (deconv3+1) * 127.5 - mean_pixel
 
     # Remove border effect reducing padding.
     height = y.get_shape().as_list()[1]
