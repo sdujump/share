@@ -174,7 +174,7 @@ def fast_style():
     grads = train_op.compute_gradients(total_loss, tvars)
     update = train_op.apply_gradients(grads)
 
-    saver = tf.train.Saver(tf.all_variables())
+    saver = tf.train.Saver(tf.all_variables(), max_to_keep=0)
     sess = tf.Session()
     sess.run(tf.initialize_all_variables())
     sess.run(tf.initialize_local_variables())
@@ -200,7 +200,7 @@ def fast_style():
             if epoch % 1 == 0:
                 if not os.path.exists(FLAGS.MODEL_DIR):
                     os.makedirs(FLAGS.MODEL_DIR)
-                saver.save(sess, FLAGS.MODEL_DIR + '/model-' + str(style_names[i][7:-4]) + '.ckpt', global_step=i, max_to_keep=0)
+                saver.save(sess, FLAGS.MODEL_DIR + '/model-' + str(style_names[i][7:-4]) + '.ckpt', global_step=i)
                 print "Saved Model"
             epoch += 1
 
