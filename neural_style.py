@@ -116,7 +116,7 @@ def get_content_features(content_image, content_layers):
 
 def fast_style():
     batch_size = 4
-    num_epochs = 50
+    num_epochs = 1
     style_layers = FLAGS.STYLE_LAYERS.split(',')
     content_layers = FLAGS.CONTENT_LAYERS.split(',')
     with h5py.File(''.join(['datasets/coco-256.h5']), 'r') as hf:
@@ -197,10 +197,10 @@ def fast_style():
                     output_t = sess.run(output_format, feed_dict={content_holder: content_image})
                     for j, raw_image in enumerate(output_t):
                         scipy.misc.imsave('test/out%s-%s.png' % (epoch, j + 1), raw_image)
-            if epoch % 3 == 0:
+            if epoch % 1 == 0:
                 if not os.path.exists(FLAGS.MODEL_DIR):
                     os.makedirs(FLAGS.MODEL_DIR)
-                saver.save(sess, FLAGS.MODEL_DIR + '/model-epoch-' + str(epoch) + '.cptk')
+                saver.save(sess, FLAGS.MODEL_DIR + '/model-' + str(style_names[i][7:-4]) + '.ckpt')
                 print "Saved Model"
             epoch += 1
 
