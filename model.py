@@ -108,8 +108,8 @@ def net(image, training):
     y = (deconv3+1) * 127.5
 
     # Remove border effect reducing padding.
-    height = tf.shape(y)[1]
-    width = tf.shape(y)[2]
+    height = y.get_shape().as_list()[1]
+    width = y.get_shape().as_list()[2]
     y = tf.slice(y, [0, 10, 10, 0], tf.pack([-1, height - 20, width - 20, -1]))
 
     return y

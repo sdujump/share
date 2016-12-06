@@ -131,7 +131,7 @@ def fast_style():
     style_net, _ = vgg.net(FLAGS.VGG_PATH, style_holder)
     content_net, _ = vgg.net(FLAGS.VGG_PATH, content_holder)
 
-    for i in range(len(generated)):
+    for i in range(len([generated])):
         generated_net, _ = vgg.net(FLAGS.VGG_PATH, generated[i])
 
         content_loss = 0
