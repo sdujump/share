@@ -79,11 +79,10 @@ def total_variation_loss(layer):
 def gram(layer):
     shape = layer.get_shape().as_list()
     num_images = shape[0]
-    width = shape[1]
-    height = shape[2]
     num_filters = shape[3]
+    size = tf.size(layer) / num_images
     filters = tf.reshape(layer, tf.pack([num_images, -1, num_filters]))
-    grams = tf.batch_matmul(filters, filters, adj_x=True) / tf.to_float(width * height * num_filters)
+    grams = tf.batch_matmul(filters, filters, adj_x=True) / tf.to_float(size)
     return grams
 
     '''
