@@ -147,14 +147,15 @@ def stylize():
     # saver = tf.train.Saver(tf.all_variables())
     sess = tf.Session()
     for i in xrange(len(style_names)):
-        style_image = (scipy.misc.imread(style_names[i], mode='RGB') / 255.0 - 0.5) * 2.0
+        # style_image = (scipy.misc.imread(style_names[i], mode='RGB') / 255.0 - 0.5) * 2.0
+        style_image = scipy.misc.imread(style_names[i], mode='RGB') - mean_pixel
         style_image = np.expand_dims(style_image, 0)
         content_iter = data_iterator(content_images, content_names, 1)
         for j in xrange(len(content_images)):
             content_image, content_name = content_iter.next()
             print 'style: ' + style_names[i] + ' content: ' + content_name[0]
-            # content_image = np.reshape(content_image, [1, 256, 256, 3]) - mean_pixel
-            content_image = (np.reshape(content_image, [1, 256, 256, 3]) / 255.0 - 0.5) * 2.0
+            content_image = np.reshape(content_image, [1, 256, 256, 3]) - mean_pixel
+            # content_image = (np.reshape(content_image, [1, 256, 256, 3]) / 255.0 - 0.5) * 2.0
             # image_t = content_image
             init = tf.initialize_all_variables()
             sess.run(init, feed_dict={content_holder: content_image})
@@ -163,7 +164,8 @@ def stylize():
                 if step % 10 == 0:
                     print 'step: ' + str(step) + ' loss: ' + str(loss_t)
             # image_t = sess.run(opt_image)
-            scipy.misc.imsave('coco_style/' + content_name[0][5:-4] + '-%s.jpg' % (i), (np.squeeze(image_t) + 1) / 2)
+            # scipy.misc.imsave('coco_style/' + content_name[0][5:-4] + '-%s.jpg' % (i), (np.squeeze(image_t) + 1) / 2)
+            scipy.misc.imsave('coco_style/' + content_name[0][5:-4] + '-%s.jpg' % (i), np.squeeze(image_t) + mean_pixel)
 
 
 def main(argv=None):
