@@ -173,13 +173,14 @@ def fast_style():
     train_op = tf.train.AdamOptimizer(1e-3)
     grads = train_op.compute_gradients(total_loss, tvars)
     update = train_op.apply_gradients(grads)
-
     saver = tf.train.Saver(tf.all_variables(), max_to_keep=0)
     sess = tf.Session()
-    sess.run(tf.initialize_all_variables())
-    sess.run(tf.initialize_local_variables())
 
     for i in xrange(len(style_names)):
+
+        sess.run(tf.initialize_all_variables())
+        sess.run(tf.initialize_local_variables())
+
         print 'style: ' + style_names[i]
         # style_image = (scipy.misc.imread(style_names[i], mode='RGB') / 255.0 - 0.5) * 2.0
         style_image = scipy.misc.imread(style_names[i], mode='RGB') - mean_pixel
