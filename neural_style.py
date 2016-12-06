@@ -126,12 +126,12 @@ def fast_style():
     content_holder = tf.placeholder(shape=[batch_size, 256, 256, 3], dtype=tf.float32)  # Random vector
 
     # generated = neural_model.net(content_holder)
-    generated = model.net(content_holder - mean_pixel, training=True)
+    generated = [model.net(content_holder - mean_pixel, training=True)]
 
     style_net, _ = vgg.net(FLAGS.VGG_PATH, style_holder)
     content_net, _ = vgg.net(FLAGS.VGG_PATH, content_holder)
 
-    for i in range(len([generated])):
+    for i in range(len(generated)):
         generated_net, _ = vgg.net(FLAGS.VGG_PATH, generated[i])
 
         content_loss = 0
