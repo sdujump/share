@@ -176,8 +176,8 @@ def fast_style():
 
     saver = tf.train.Saver(tf.all_variables())
     sess = tf.Session()
-    sess.run(tf.global_variables_initializer())
-    sess.run(tf.local_variables_initializer())
+    sess.run(tf.initialize_all_variables())
+    sess.run(tf.initialize_local_variables())
 
     for i in xrange(len(style_names)):
         print 'style: ' + style_names[i]
