@@ -12,7 +12,7 @@ from tensorflow.python.client import device_lib
 import neural_model
 import model
 
-os.environ["CUDA_VISIBLE_DEVICES"] = "2"
+os.environ["CUDA_VISIBLE_DEVICES"] = "0"
 print device_lib.list_local_devices()
 
 tf.app.flags.DEFINE_integer("CONTENT_WEIGHT", 5, "5e0Weight for content features loss")
@@ -141,7 +141,7 @@ def inference(path, name):
 
 
 def fast_style():
-    batch_size = 100
+    batch_size = 50
     num_epochs = 1
     style_layers = FLAGS.STYLE_LAYERS.split(',')
     content_layers = FLAGS.CONTENT_LAYERS.split(',')
