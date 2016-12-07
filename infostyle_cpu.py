@@ -7,7 +7,7 @@ import h5py  # for reading our dataset
 from tensorflow.python.client import device_lib
 import tqdm  # making loops prettier
 
-os.environ["CUDA_VISIBLE_DEVICES"] = "0, 1, 2, 3"
+os.environ["CUDA_VISIBLE_DEVICES"] = "1"
 print device_lib.list_local_devices()
 
 tf.app.flags.DEFINE_string("train_image_dir", "train_images", "")
