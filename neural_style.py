@@ -114,6 +114,31 @@ def get_content_features(content_image, content_layers):
     return layers
 
 
+def inference(path, name):
+    with h5py.File(''.join(['datasets/coco-256.h5']), 'r') as hf:
+        content_images = hf['images'].value
+        content_names = hf['filenames'].value
+    content_holder = tf.placeholder(shape=[1, 256, 256, 3], dtype=tf.float32)  # Random vector
+    total_batch = len(content_images)
+    content_iter = data_iterator(content_images, content_names, 1)
+
+    generated = model.net(content_holder, training=True)
+    output_format = tf.saturate_cast(generated + mean_pixel, tf.uint8)
+
+    sess = tf.Session()
+    sess.run(tf.initialize_all_variables())
+    sess.run(tf.initialize_local_variables())
+    saver = tf.train.Saver()
+    saver.restore(sess, path)
+
+    for j in tqdm.tqdm(xrange(total_batch)):
+        content_image, content_name = content_iter.next()
+        print "stylize: " + str(content_name)
+        content_image = np.reshape(content_image, [1, 256, 256, 3]) - mean_pixel
+        output_t = sess.run(output_format, feed_dict={content_holder: content_image})
+        scipy.misc.imsave('coco_style/%s-%s.png' % (content_name[0][5:-4], name), output_t[0])
+
+
 def fast_style():
     batch_size = 4
     num_epochs = 1
