@@ -12,7 +12,7 @@ from tensorflow.python.client import device_lib
 import neural_model
 import model
 
-os.environ["CUDA_VISIBLE_DEVICES"] = "1"
+os.environ["CUDA_VISIBLE_DEVICES"] = "2"
 print device_lib.list_local_devices()
 
 tf.app.flags.DEFINE_integer("CONTENT_WEIGHT", 5, "5e0Weight for content features loss")
@@ -349,4 +349,4 @@ if __name__ == '__main__':
     # tf.app.run()
     # get_dataset('coco', 256, channel=3)
     # fast_style()
-    inference('style_model/model-wave_pattern.ckpt-1', '1')
+    inference('style_model/model-composition_vii.ckpt-0', '2')
