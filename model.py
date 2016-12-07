@@ -48,8 +48,7 @@ def resize_conv2d(x, input_filters, output_filters, kernel, strides, training):
             x, [new_height, new_width], tf.image.ResizeMethod.NEAREST_NEIGHBOR)
 
         shape = [kernel, kernel, input_filters, output_filters]
-        weight = tf.Variable(tf.truncated_normal(
-            shape, stddev=0.1), name='weight')
+        weight = tf.Variable(tf.truncated_normal(shape, stddev=0.1), name='weight')
         return conv2d(x_resized, input_filters, output_filters, kernel, strides)
 
 
