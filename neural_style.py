@@ -141,7 +141,7 @@ def inference(path, name):
 
 
 def fast_style():
-    batch_size = 10
+    batch_size = 100
     num_epochs = 1
     style_layers = FLAGS.STYLE_LAYERS.split(',')
     content_layers = FLAGS.CONTENT_LAYERS.split(',')
