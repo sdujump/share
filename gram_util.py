@@ -9,6 +9,16 @@ import tensorflow.contrib.slim as slim
 import vgg
 
 
+def gram_np(layer):
+    shape = layer.shape
+    num_images = shape[0]
+    num_filters = shape[3]
+    size = layer.size / num_images
+    filters = np.reshape(layer, [num_images, -1, num_filters])
+    grams = np.matmul(np.swapaxes(filters, 1, 2), filters) / tf.to_float(size)
+    return np.triu_indices(grams)
+
+
 def gram(layer):
     shape = layer.get_shape().as_list()
     num_images = shape[0]
@@ -16,13 +26,13 @@ def gram(layer):
     size = tf.size(layer) / num_images
     filters = tf.reshape(layer, tf.pack([num_images, -1, num_filters]))
     grams = tf.batch_matmul(filters, filters, adj_x=True) / tf.to_float(size)
-    return np.linalg.triu(grams)
+    return grams
 
 
 def gram_encoder(gram, reuse=False):
     with tf.variable_scope('gram_enc', reuse=reuse):
         initializer = tf.truncated_normal_initializer(stddev=0.02)
-        zGh = slim.fully_connected(gram, 1024, activation_fn=None, reuse=reuse, scope='gram_project', weights_initializer=initializer)
+        zGh = slim.fully_connected(gram, 1024, activation_fn=tf.nn.relu, reuse=reuse, scope='gram_project', weights_initializer=initializer)
         zGram = slim.fully_connected(zGh, 20, activation_fn=None, reuse=reuse, scope='gram_project', weights_initializer=initializer)
         return zGram
 

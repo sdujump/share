@@ -7,6 +7,8 @@ import h5py  # for reading our dataset
 from tensorflow.python.client import device_lib
 import tqdm  # making loops prettier
 import vgg
+from os import listdir
+from os.path import isfile, join
 
 os.environ["CUDA_VISIBLE_DEVICES"] = "1"
 print device_lib.list_local_devices()
@@ -47,9 +49,13 @@ total_batch = int(np.floor(num_examples / (batch_size)))
 # Directory to save sample images from generator in.
 sample_directory = './figsTut'
 model_directory = './models'  # Directory to save trained model to.
+mean_pixel = [123.68, 116.779, 103.939]  # ImageNet average from VGG ..
 
 
 def train_infogan():
+
+    style_names = [join('styles', f) for f in listdir('styles') if isfile(join('styles', f)) & f.lower().endswith('jpg')]
+    style_image = scipy.misc.imread(style_names[0], mode='RGB') - mean_pixel
     # Create a variable to count the number of train() calls. This equals the
     # number of batches processed * FLAGS.num_gpus.
     # global_step = tf.get_variable('global_step', [], initializer=tf.constant_initializer(0), trainable=False)
@@ -169,20 +175,16 @@ def tower_loss(real_in, z_lat):
     return d_loss, g_loss, q_loss, Gz
 
 
-def latent_prior(z_size, batch_size, num_gpus):
+def latent_prior(z_size, batch_size, style_image, num_gpus):
 
-    style_net, _ = vgg.net(FLAGS.VGG_PATH, style_holder)
+    style_net, _ = vgg.net(FLAGS.VGG_PATH, style_image)
     style_layer = style_net[layer]
-    z_gram = infostyle_util.gram_encoder(infostyle_util.gram(style_layer))
-
+    z_gram = infostyle_util.gram_encoder(infostyle_util.gram_np(style_layer))
+    z_grams = np.repeat(z_gram, batch_size, 0)
     zs = np.random.uniform(-1.0, 1.0, size=[batch_size * num_gpus, z_size]).astype(np.float32)
-    lcont = np.random.uniform(-1, 1, [batch_size * num_gpus, number_continuous])
 
-    lcat = np.random.randint(0, 10, [batch_size * num_gpus, ])  # Generate random c batch
-    latent_oh = np.zeros((batch_size * num_gpus, 10))
-    latent_oh[np.arange(batch_size * num_gpus), lcat] = 1
     # Concatenate all c and z variables.
-    zlat = np.concatenate([latent_oh, zs, lcont], 1).astype(np.float32)
+    zlat = np.concatenate([zs, z_grams], 1).astype(np.float32)
     return zlat
 
 
