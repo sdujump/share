@@ -123,7 +123,7 @@ def inference(path, name):
     total_batch = len(content_images)
     content_iter = data_iterator(content_images, content_names, 1)
 
-    generated = model.net(content_holder, training=True)
+    generated = model.net(content_holder)
     output_format = tf.saturate_cast(generated + mean_pixel, tf.uint8)
 
     sess = tf.Session()
@@ -141,7 +141,7 @@ def inference(path, name):
 
 
 def fast_style():
-    batch_size = 100
+    batch_size = 10
     num_epochs = 1
     style_layers = FLAGS.STYLE_LAYERS.split(',')
     content_layers = FLAGS.CONTENT_LAYERS.split(',')
@@ -162,7 +162,7 @@ def fast_style():
     content_holder = tf.placeholder(shape=[batch_size, 256, 256, 3], dtype=tf.float32)  # Random vector
 
     # generated = neural_model.net(content_holder)
-    generated = [model.net(content_holder, training=True)]
+    generated = [model.net(content_holder)]
 
     style_net, _ = vgg.net(FLAGS.VGG_PATH, style_holder)
     content_net, _ = vgg.net(FLAGS.VGG_PATH, content_holder)

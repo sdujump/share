@@ -28,7 +28,7 @@ def conv2d_transpose(x, input_filters, output_filters, kernel, strides):
         return tf.nn.conv2d_transpose(x, weight, output_shape, strides=[1, strides, strides, 1], name='conv_transpose')
 
 
-def resize_conv2d(x, input_filters, output_filters, kernel, strides, training):
+def resize_conv2d(x, input_filters, output_filters, kernel, strides):
     '''
     An alternative to transposed convolution where we first resize, then convolve.
     See http://distill.pub/2016/deconv-checkerboard/
@@ -38,17 +38,13 @@ def resize_conv2d(x, input_filters, output_filters, kernel, strides, training):
     plumb through a "training" argument
     '''
     with tf.variable_scope('conv_transpose') as scope:
-        height = x.get_shape()[1].value if training else tf.shape(x)[1]
-        width = x.get_shape()[2].value if training else tf.shape(x)[2]
+        height = x.get_shape()[1].value
+        width = x.get_shape()[2].value
 
         new_height = height * strides * 2
         new_width = width * strides * 2
 
-        x_resized = tf.image.resize_images(
-            x, [new_height, new_width], tf.image.ResizeMethod.NEAREST_NEIGHBOR)
-
-        shape = [kernel, kernel, input_filters, output_filters]
-        weight = tf.Variable(tf.truncated_normal(shape, stddev=0.1), name='weight')
+        x_resized = tf.image.resize_images(x, [new_height, new_width], tf.image.ResizeMethod.NEAREST_NEIGHBOR)
         return conv2d(x_resized, input_filters, output_filters, kernel, strides)
 
 
@@ -92,7 +88,7 @@ def residual(x, filters, kernel, strides):
         return residual
 
 
-def net(image, training):
+def net(image):
     # Less border effects when padding a little before passing through ..
     image = tf.pad(image, [[0, 0], [10, 10], [10, 10], [0, 0]], mode='REFLECT')
 
@@ -114,10 +110,10 @@ def net(image, training):
         res5 = residual(res4, 128, 3, 1)
     with tf.variable_scope('deconv1'):
         deconv1 = tf.nn.relu(instance_norm(
-            resize_conv2d(res5, 128, 64, 3, 2, training)))
+            resize_conv2d(res5, 128, 64, 3, 2)))
     with tf.variable_scope('deconv2'):
         deconv2 = tf.nn.relu(instance_norm(
-            resize_conv2d(deconv1, 64, 32, 3, 2, training)))
+            resize_conv2d(deconv1, 64, 32, 3, 2)))
     with tf.variable_scope('deconv3'):
         deconv3 = tf.nn.tanh(instance_norm(conv2d(deconv2, 32, 3, 9, 1)))
 
