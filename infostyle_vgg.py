@@ -33,7 +33,7 @@ def show_variables(variales):
 
 
 # tf.reset_default_graph()
-
+layer = 'relu2_2'
 num_gpus = 1
 z_size = 64  # Size of initial z vector used for generator.
 image_size = 32
@@ -58,6 +58,7 @@ def train_infogan():
     # initializer = tf.truncated_normal_initializer(stddev=0.02)
 
     # These placeholders are used for input into the generator and discriminator, respectively.
+    style_holder = tf.placeholder(shape=[1, None, None, 3], dtype=tf.float32)  # Real images
     real_in_list = tf.placeholder(shape=[None, image_size, image_size, 3], dtype=tf.float32)  # Real images
     z_lat = tf.placeholder(shape=[None, z_size + categorical_list + number_continuous], dtype=tf.float32)  # Random vector
     style_net, _ = vgg.net(FLAGS.VGG_PATH, style_holder)
@@ -169,6 +170,11 @@ def tower_loss(real_in, z_lat):
 
 
 def latent_prior(z_size, batch_size, num_gpus):
+
+    style_net, _ = vgg.net(FLAGS.VGG_PATH, style_holder)
+    style_layer = style_net[layer]
+    z_gram = infostyle_util.gram_encoder(infostyle_util.gram(style_layer))
+
     zs = np.random.uniform(-1.0, 1.0, size=[batch_size * num_gpus, z_size]).astype(np.float32)
     lcont = np.random.uniform(-1, 1, [batch_size * num_gpus, number_continuous])
 
@@ -178,16 +184,6 @@ def latent_prior(z_size, batch_size, num_gpus):
     # Concatenate all c and z variables.
     zlat = np.concatenate([latent_oh, zs, lcont], 1).astype(np.float32)
     return zlat
-
-
-def gram(layer):
-    shape = layer.get_shape().as_list()
-    num_images = shape[0]
-    num_filters = shape[3]
-    size = tf.size(layer) / num_images
-    filters = tf.reshape(layer, tf.pack([num_images, -1, num_filters]))
-    grams = tf.batch_matmul(filters, filters, adj_x=True) / tf.to_float(size)
-    return grams
 
 
 if __name__ == '__main__':
