@@ -348,4 +348,5 @@ def main(argv=None):
 if __name__ == '__main__':
     # tf.app.run()
     # get_dataset('coco', 256, channel=3)
-    fast_style()
+    # fast_style()
+    inference('style_model/model-wave_pattern.ckpt-1', '1')
