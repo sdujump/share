@@ -349,4 +349,4 @@ if __name__ == '__main__':
     # tf.app.run()
     # get_dataset('coco', 256, channel=3)
     # fast_style()
-    inference('style_model/model-composition_vii.ckpt-0', '2')
+    inference('style_model/model-the-cafe-1914.ckpt-2', '3')

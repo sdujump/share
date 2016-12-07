@@ -2,7 +2,7 @@
 import tensorflow as tf
 import numpy as np
 import os
-import infostyle_util3 as infostyle_util
+import infostyle_util
 import h5py  # for reading our dataset
 from tensorflow.python.client import device_lib
 import tqdm  # making loops prettier
