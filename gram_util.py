@@ -26,8 +26,11 @@ def gram(layer):
     num_filters = shape[3]
     size = tf.size(layer) / num_images
     filters = tf.reshape(layer, tf.pack([num_images, -1, num_filters]))
-    grams = tf.batch_matmul(filters, filters, adj_x=True) / tf.to_float(size)
-    return grams
+    grams = tf.batch_matmul(filters, filters, adj_x=True) / tf.to_double(size)
+    triu = np.triu_indices_from(np.zeros((num_filters, num_filters)))
+    ind = triu[0] * num_filters + triu[1]
+    grams_fla = tf.contrib.layers.flatten(grams)
+    return tf.gather(grams_fla[0], ind)
 
 
 def gram_encoder(gram, reuse=False):
@@ -43,36 +46,36 @@ def generator(z, reuse=False):
 
         initializer = tf.truncated_normal_initializer(stddev=0.02)
 
-        zP = slim.fully_connected(z, 4 * 4 * 256, normalizer_fn=slim.batch_norm,
+        zP = slim.fully_connected(z, 8 * 8 * 256, normalizer_fn=slim.batch_norm,
                                   activation_fn=tf.nn.relu, scope='g_project', weights_initializer=initializer)
-        zCon = tf.reshape(zP, [-1, 4, 4, 256])
+        zCon = tf.reshape(zP, [-1, 8, 8, 256])
         gen1 = slim.convolution2d_transpose(
-            zCon, num_outputs=32, kernel_size=[3, 3], stride=2,
+            zCon, num_outputs=64, kernel_size=[3, 3], stride=2,
             padding="SAME", normalizer_fn=slim.batch_norm,
             activation_fn=tf.nn.relu, scope='g_conv1', weights_initializer=initializer)
 
         gen2 = slim.convolution2d_transpose(
-            gen1, num_outputs=16, kernel_size=[3, 3], stride=2,
+            gen1, num_outputs=32, kernel_size=[3, 3], stride=2,
             padding="SAME", normalizer_fn=slim.batch_norm,
             activation_fn=tf.nn.relu, scope='g_conv2', weights_initializer=initializer)
 
         gen3 = slim.convolution2d_transpose(
-            gen2, num_outputs=8, kernel_size=[3, 3], stride=2,
+            gen2, num_outputs=16, kernel_size=[3, 3], stride=2,
             padding="SAME", normalizer_fn=slim.batch_norm,
             activation_fn=tf.nn.relu, scope='g_conv3', weights_initializer=initializer)
-        '''
+
         gen4 = slim.convolution2d_transpose(
-            gen3, num_outputs=3, kernel_size=[3, 3], stride=2,
+            gen3, num_outputs=8, kernel_size=[3, 3], stride=2,
             padding="SAME", normalizer_fn=slim.batch_norm,
             activation_fn=tf.nn.relu, scope='g_conv4', weights_initializer=initializer)
-        '''
+
         g_out = slim.convolution2d_transpose(
-            gen3, num_outputs=1, kernel_size=[32, 32], stride=1,
+            gen4, num_outputs=3, kernel_size=[32, 32], stride=1,
             padding="SAME", biases_initializer=None, activation_fn=tf.nn.tanh, scope='g_out', weights_initializer=initializer)
 
-        g_out_concat = tf.concat(3, [g_out, g_out, g_out], name='concat')
+        # g_out_concat = tf.concat(3, [g_out, g_out, g_out], name='concat')
 
-        return g_out_concat
+        return g_out
 
 
 def discriminator(bottom, reuse=False):
@@ -81,7 +84,9 @@ def discriminator(bottom, reuse=False):
 
         x_net, _ = vgg.net('imagenet-vgg-verydeep-19.mat', bottom)
 
-        dis1 = slim.convolution2d(x_net['relu1_2'], 128, [3, 3], padding="SAME", stride=2,
+        x_layer = x_net['relu2_2']
+
+        dis1 = slim.convolution2d(x_layer, 128, [3, 3], padding="SAME", stride=2,
                                   biases_initializer=None, activation_fn=lrelu,
                                   reuse=reuse, scope='d_conv1', weights_initializer=initializer)
         # dis1 = tf.space_to_depth(dis1, 2)
@@ -102,18 +107,9 @@ def discriminator(bottom, reuse=False):
         d_out = slim.fully_connected(dis4, 1, activation_fn=tf.nn.sigmoid,
                                      reuse=reuse, scope='d_out', weights_initializer=initializer)
 
-        q_a = slim.fully_connected(dis4, 128, normalizer_fn=slim.batch_norm,
-                                   reuse=reuse, scope='q_fc1', weights_initializer=initializer)
+        gram_out = gram(x_layer)
 
-        # Here we define the unique layers used for the q-network. The number of outputs depends on the number of
-        # latent variables we choose to define.
-        q_cat_outs = []
-        q_outA = slim.fully_connected(q_a, 10, activation_fn=tf.nn.softmax, reuse=reuse, scope='q_out_cat', weights_initializer=initializer)
-        q_cat_outs.append(q_outA)
-
-        q_cont_outs = slim.fully_connected(q_a, 2, activation_fn=tf.nn.tanh, reuse=reuse, scope='q_out_cont', weights_initializer=initializer)
-
-        return d_out, q_cat_outs, q_cont_outs
+        return d_out, gram_out
 
 
 def lrelu(x, leak=0.2, name="lrelu"):
