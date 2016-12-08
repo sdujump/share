@@ -12,7 +12,7 @@ from tensorflow.python.client import device_lib
 import neural_model as model
 # import model
 
-os.environ["CUDA_VISIBLE_DEVICES"] = "0"
+os.environ["CUDA_VISIBLE_DEVICES"] = "1"
 print device_lib.list_local_devices()
 
 tf.app.flags.DEFINE_integer("CONTENT_WEIGHT", 1, "5e0Weight for content features loss")
