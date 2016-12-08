@@ -137,7 +137,7 @@ def fast_style():
         content_images = hf['images'].value
         content_names = hf['filenames'].value
 
-    total_batch = int(np.floor(len(content_images) / (10 * batch_size)))
+    total_batch = int(np.floor(len(content_images) / (batch_size)))
 
     total_loss = 0
     total_content = 0
