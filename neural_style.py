@@ -9,10 +9,10 @@ import tqdm  # making loops prettier
 import scipy.misc
 import os
 from tensorflow.python.client import device_lib
-import neural_model as model
-# import model
+import neural_model
+import model
 
-os.environ["CUDA_VISIBLE_DEVICES"] = "1"
+os.environ["CUDA_VISIBLE_DEVICES"] = "0"
 print device_lib.list_local_devices()
 
 tf.app.flags.DEFINE_integer("CONTENT_WEIGHT", 1, "5e0Weight for content features loss")
@@ -151,7 +151,7 @@ def fast_style():
     w_C = tf.placeholder(tf.float32, shape=[])
 
     # generated = neural_model.net(content_holder)
-    generated = model.net(content_holder)
+    generated = [model.net(content_holder)]
 
     style_net, _ = vgg.net(FLAGS.VGG_PATH, style_holder)
     content_net, _ = vgg.net(FLAGS.VGG_PATH, content_holder)
@@ -226,11 +226,11 @@ def fast_style():
                     print 'epoch: ' + str(epoch) + ' loss: ' + str(loss_t) + ' loss_s: ' + str(loss_s) + ' loss_c: ' + str(loss_c)
                     output_t = sess.run(output_format, feed_dict={content_holder: content_image})
                     for j, raw_image in enumerate(output_t):
-                        scipy.misc.imsave('test/out2%s-%s.png' % (epoch, j + 1), raw_image)
+                        scipy.misc.imsave('test/out%s-%s.png' % (epoch, j + 1), raw_image)
             if epoch % 1 == 0:
                 if not os.path.exists(FLAGS.MODEL_DIR):
                     os.makedirs(FLAGS.MODEL_DIR)
-                saver.save(sess, FLAGS.MODEL_DIR + '/model2-' + str(style_names[i][7:-4]) + '.ckpt', global_step=i)
+                saver.save(sess, FLAGS.MODEL_DIR + '/model-' + str(style_names[i][7:-4]) + '.ckpt', global_step=i)
                 print "Saved Model"
             epoch += 1
 
