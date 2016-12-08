@@ -10,19 +10,20 @@ import scipy.misc
 import os
 from tensorflow.python.client import device_lib
 import neural_model
-import model
+import model2 as model
 
 os.environ["CUDA_VISIBLE_DEVICES"] = "0"
 print device_lib.list_local_devices()
 
-tf.app.flags.DEFINE_integer("CONTENT_WEIGHT", 1, "5e0Weight for content features loss")
-tf.app.flags.DEFINE_integer("STYLE_WEIGHT", 1, "1e2Weight for style features loss")
+tf.app.flags.DEFINE_integer("CONTENT_WEIGHT", 5, "5e0Weight for content features loss")
+tf.app.flags.DEFINE_integer("STYLE_WEIGHT", 30, "1e2Weight for style features loss")
 tf.app.flags.DEFINE_integer("TV_WEIGHT", 1e-5, "Weight for total variation loss")
 tf.app.flags.DEFINE_string("VGG_PATH", "imagenet-vgg-verydeep-19.mat", "Path to vgg model weights")
 tf.app.flags.DEFINE_string("CONTENT_LAYERS", "relu3_4", "Which VGG layer to extract content loss from")
-tf.app.flags.DEFINE_string("STYLE_LAYERS", "relu1_2,relu2_2,relu3_4,relu4_4", "Which layers to extract style from")
-# tf.app.flags.DEFINE_string("STYLE_LAYERS", "relu3_4", "Which layers to extract style from")
-tf.app.flags.DEFINE_float("LEARNING_RATE", 1e-3, "Learning rate")
+# tf.app.flags.DEFINE_string("STYLE_LAYERS", "relu1_2,relu2_2,relu3_4,relu4_4", "Which layers to extract style from")
+tf.app.flags.DEFINE_string("STYLE_LAYERS", "relu2_2", "Which layers to extract style from")
+tf.app.flags.DEFINE_float("STYLE_SCALE", 1.0, "Scale styles. Higher extracts smaller features")
+tf.app.flags.DEFINE_float("LEARNING_RATE", 10., "Learning rate")
 tf.app.flags.DEFINE_integer("NUM_ITERATIONS", 300, "Number of iterations")
 tf.app.flags.DEFINE_string("MODEL_DIR", "style_model", "path")
 
@@ -85,6 +86,18 @@ def gram(layer):
     grams = tf.batch_matmul(filters, filters, adj_x=True) / tf.to_float(size)
     return grams
 
+    '''
+def gram(layer):
+    shape = layer.get_shape().as_list()
+    num_filters = shape[3]
+    size = tf.size(layer)
+    filters = tf.reshape(layer, tf.pack([-1, num_filters]))
+    gram = tf.matmul(filters, filters, transpose_a=True) / tf.to_float(size)
+
+    return gram
+'''
+# TODO: Different style scales per image.
+
 
 def get_style_features(style_image, style_layers):
     net, _ = vgg.net(FLAGS.VGG_PATH, style_image)
@@ -128,7 +141,7 @@ def inference(path, name):
 
 
 def fast_style():
-    batch_size = 4
+    batch_size = 10
     num_epochs = 1
     style_layers = FLAGS.STYLE_LAYERS.split(',')
     content_layers = FLAGS.CONTENT_LAYERS.split(',')
@@ -147,8 +160,6 @@ def fast_style():
 
     style_holder = tf.placeholder(shape=[1, None, None, 3], dtype=tf.float32)  # Real images
     content_holder = tf.placeholder(shape=[batch_size, 256, 256, 3], dtype=tf.float32)  # Random vector
-    w_S = tf.placeholder(tf.float32, shape=[])
-    w_C = tf.placeholder(tf.float32, shape=[])
 
     # generated = neural_model.net(content_holder)
     generated = [model.net(content_holder)]
@@ -181,11 +192,11 @@ def fast_style():
         total_style += style_loss
         total_variation += total_variation_loss(generated[i])
 
-    total_loss = w_S * total_style + w_C * total_content + FLAGS.TV_WEIGHT * total_variation
+    total_loss = FLAGS.STYLE_WEIGHT * total_style + FLAGS.CONTENT_WEIGHT * total_content + FLAGS.TV_WEIGHT * total_variation
     output_format = tf.saturate_cast(tf.concat(0, [generated[-1], content_holder]) + mean_pixel, tf.uint8)
 
     tvars = tf.trainable_variables()
-    train_op = tf.train.AdamOptimizer(FLAGS.LEARNING_RATE)
+    train_op = tf.train.AdamOptimizer(1e-3)
     grads = train_op.compute_gradients(total_loss, tvars)
     update = train_op.apply_gradients(grads)
     saver = tf.train.Saver(tf.all_variables(), max_to_keep=0)
@@ -201,28 +212,12 @@ def fast_style():
         style_image = scipy.misc.imread(style_names[i], mode='RGB') - mean_pixel
         style_image = np.expand_dims(style_image, 0)
         epoch = 0
-        pre_loss_s = 0.0
-        Pre_loss_c = 0.0
-        loss_s = 1.0
-        loss_c = 1.0
         while epoch < num_epochs:
             content_iter = data_iterator(content_images, content_names, batch_size)
             for j in tqdm.tqdm(xrange(total_batch)):
                 content_image, content_name = content_iter.next()
                 content_image = np.reshape(content_image, [batch_size, 256, 256, 3]) - mean_pixel
-                '''
-                d_loss_s = max((loss_s - pre_loss_s) / loss_s, 0)
-                d_loss_c = max((loss_c - Pre_loss_c) / loss_c, 0)
-                ws = 10 * (d_loss_c + 1e-5) / (d_loss_s + d_loss_c + 1e-5)
-                wc = 10 * (d_loss_s + 1e-5) / (d_loss_s + d_loss_c + 1e-5)
-
-                pre_loss_s = loss_s
-                Pre_loss_c = loss_c
-                print 'ws: ' + str(ws) + ' wc: ' + str(wc)
-                '''
-                ws = 30
-                wc = 5
-                _, loss_t, loss_s, loss_c = sess.run([update, total_loss, total_style, total_content], feed_dict={content_holder: content_image, style_holder: style_image, w_S: ws, w_C: wc})
+                _, loss_t, loss_s, loss_c = sess.run([update, total_loss, total_style, total_content], feed_dict={content_holder: content_image, style_holder: style_image})
 
                 if j % 100 == 0:
                     print 'epoch: ' + str(epoch) + ' loss: ' + str(loss_t) + ' loss_s: ' + str(loss_s) + ' loss_c: ' + str(loss_c)
