@@ -210,7 +210,7 @@ def fast_style():
             for j in tqdm.tqdm(xrange(total_batch)):
                 content_image, content_name = content_iter.next()
                 content_image = np.reshape(content_image, [batch_size, 256, 256, 3]) - mean_pixel
-
+                '''
                 d_loss_s = max((loss_s - pre_loss_s) / loss_s, 0)
                 d_loss_c = max((loss_c - Pre_loss_c) / loss_c, 0)
                 ws = 10 * (d_loss_c + 1e-5) / (d_loss_s + d_loss_c + 1e-5)
@@ -219,7 +219,9 @@ def fast_style():
                 pre_loss_s = loss_s
                 Pre_loss_c = loss_c
                 print 'ws: ' + str(ws) + ' wc: ' + str(wc)
-
+                '''
+                ws = 30
+                wc = 5
                 _, loss_t, loss_s, loss_c = sess.run([update, total_loss, total_style, total_content], feed_dict={content_holder: content_image, style_holder: style_image, w_S: ws, w_C: wc})
 
                 if j % 100 == 0:
