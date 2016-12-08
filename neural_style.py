@@ -9,8 +9,8 @@ import tqdm  # making loops prettier
 import scipy.misc
 import os
 from tensorflow.python.client import device_lib
-import neural_model
-import model
+import neural_model as model
+# import model
 
 os.environ["CUDA_VISIBLE_DEVICES"] = "0"
 print device_lib.list_local_devices()
@@ -151,7 +151,7 @@ def fast_style():
     w_C = tf.placeholder(tf.float32, shape=[])
 
     # generated = neural_model.net(content_holder)
-    generated = [model.net(content_holder)]
+    generated = model.net(content_holder)
 
     style_net, _ = vgg.net(FLAGS.VGG_PATH, style_holder)
     content_net, _ = vgg.net(FLAGS.VGG_PATH, content_holder)
@@ -210,7 +210,7 @@ def fast_style():
             for j in tqdm.tqdm(xrange(total_batch)):
                 content_image, content_name = content_iter.next()
                 content_image = np.reshape(content_image, [batch_size, 256, 256, 3]) - mean_pixel
-                '''
+
                 d_loss_s = max((loss_s - pre_loss_s) / loss_s, 0)
                 d_loss_c = max((loss_c - Pre_loss_c) / loss_c, 0)
                 ws = 10 * (d_loss_c + 1e-5) / (d_loss_s + d_loss_c + 1e-5)
@@ -219,20 +219,18 @@ def fast_style():
                 pre_loss_s = loss_s
                 Pre_loss_c = loss_c
                 print 'ws: ' + str(ws) + ' wc: ' + str(wc)
-                '''
-                ws = 30
-                wc = 5
+
                 _, loss_t, loss_s, loss_c = sess.run([update, total_loss, total_style, total_content], feed_dict={content_holder: content_image, style_holder: style_image, w_S: ws, w_C: wc})
 
                 if j % 100 == 0:
                     print 'epoch: ' + str(epoch) + ' loss: ' + str(loss_t) + ' loss_s: ' + str(loss_s) + ' loss_c: ' + str(loss_c)
                     output_t = sess.run(output_format, feed_dict={content_holder: content_image})
                     for j, raw_image in enumerate(output_t):
-                        scipy.misc.imsave('test/out%s-%s.png' % (epoch, j + 1), raw_image)
+                        scipy.misc.imsave('test/out2%s-%s.png' % (epoch, j + 1), raw_image)
             if epoch % 1 == 0:
                 if not os.path.exists(FLAGS.MODEL_DIR):
                     os.makedirs(FLAGS.MODEL_DIR)
-                saver.save(sess, FLAGS.MODEL_DIR + '/model-' + str(style_names[i][7:-4]) + '.ckpt', global_step=i)
+                saver.save(sess, FLAGS.MODEL_DIR + '/model2-' + str(style_names[i][7:-4]) + '.ckpt', global_step=i)
                 print "Saved Model"
             epoch += 1
 
