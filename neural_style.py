@@ -15,15 +15,15 @@ import model
 os.environ["CUDA_VISIBLE_DEVICES"] = "0"
 print device_lib.list_local_devices()
 
-tf.app.flags.DEFINE_integer("CONTENT_WEIGHT", 5, "5e0Weight for content features loss")
-tf.app.flags.DEFINE_integer("STYLE_WEIGHT", 20, "1e2Weight for style features loss")
+tf.app.flags.DEFINE_integer("CONTENT_WEIGHT", 1, "5e0Weight for content features loss")
+tf.app.flags.DEFINE_integer("STYLE_WEIGHT", 1, "1e2Weight for style features loss")
 tf.app.flags.DEFINE_integer("TV_WEIGHT", 1e-5, "Weight for total variation loss")
 tf.app.flags.DEFINE_string("VGG_PATH", "imagenet-vgg-verydeep-19.mat", "Path to vgg model weights")
 tf.app.flags.DEFINE_string("CONTENT_LAYERS", "relu3_4", "Which VGG layer to extract content loss from")
 tf.app.flags.DEFINE_string("STYLE_LAYERS", "relu1_2,relu2_2,relu3_4,relu4_4", "Which layers to extract style from")
 # tf.app.flags.DEFINE_string("STYLE_LAYERS", "relu3_4", "Which layers to extract style from")
 tf.app.flags.DEFINE_float("STYLE_SCALE", 1.0, "Scale styles. Higher extracts smaller features")
-tf.app.flags.DEFINE_float("LEARNING_RATE", 1e-3, "Learning rate")
+tf.app.flags.DEFINE_float("LEARNING_RATE", 1e-2, "Learning rate")
 tf.app.flags.DEFINE_integer("NUM_ITERATIONS", 300, "Number of iterations")
 tf.app.flags.DEFINE_string("MODEL_DIR", "style_model", "path")
 
