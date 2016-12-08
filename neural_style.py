@@ -23,7 +23,7 @@ tf.app.flags.DEFINE_string("CONTENT_LAYERS", "relu3_4", "Which VGG layer to extr
 tf.app.flags.DEFINE_string("STYLE_LAYERS", "relu1_2,relu2_2,relu3_4,relu4_4", "Which layers to extract style from")
 # tf.app.flags.DEFINE_string("STYLE_LAYERS", "relu3_4", "Which layers to extract style from")
 tf.app.flags.DEFINE_float("STYLE_SCALE", 1.0, "Scale styles. Higher extracts smaller features")
-tf.app.flags.DEFINE_float("LEARNING_RATE", 10., "Learning rate")
+tf.app.flags.DEFINE_float("LEARNING_RATE", 1., "Learning rate")
 tf.app.flags.DEFINE_integer("NUM_ITERATIONS", 300, "Number of iterations")
 tf.app.flags.DEFINE_string("MODEL_DIR", "style_model", "path")
 
