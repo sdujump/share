@@ -20,8 +20,8 @@ tf.app.flags.DEFINE_integer("STYLE_WEIGHT", 30, "1e2Weight for style features lo
 tf.app.flags.DEFINE_integer("TV_WEIGHT", 1e-5, "Weight for total variation loss")
 tf.app.flags.DEFINE_string("VGG_PATH", "imagenet-vgg-verydeep-19.mat", "Path to vgg model weights")
 tf.app.flags.DEFINE_string("CONTENT_LAYERS", "relu3_4", "Which VGG layer to extract content loss from")
-# tf.app.flags.DEFINE_string("STYLE_LAYERS", "relu1_2,relu2_2,relu3_4,relu4_4", "Which layers to extract style from")
-tf.app.flags.DEFINE_string("STYLE_LAYERS", "relu2_2", "Which layers to extract style from")
+tf.app.flags.DEFINE_string("STYLE_LAYERS", "relu1_2,relu2_2,relu3_4,relu4_4", "Which layers to extract style from")
+# tf.app.flags.DEFINE_string("STYLE_LAYERS", "relu3_4", "Which layers to extract style from")
 tf.app.flags.DEFINE_float("STYLE_SCALE", 1.0, "Scale styles. Higher extracts smaller features")
 tf.app.flags.DEFINE_float("LEARNING_RATE", 10., "Learning rate")
 tf.app.flags.DEFINE_integer("NUM_ITERATIONS", 300, "Number of iterations")
@@ -86,18 +86,6 @@ def gram(layer):
     grams = tf.batch_matmul(filters, filters, adj_x=True) / tf.to_float(size)
     return grams
 
-    '''
-def gram(layer):
-    shape = layer.get_shape().as_list()
-    num_filters = shape[3]
-    size = tf.size(layer)
-    filters = tf.reshape(layer, tf.pack([-1, num_filters]))
-    gram = tf.matmul(filters, filters, transpose_a=True) / tf.to_float(size)
-
-    return gram
-'''
-# TODO: Different style scales per image.
-
 
 def get_style_features(style_image, style_layers):
     net, _ = vgg.net(FLAGS.VGG_PATH, style_image)
@@ -149,7 +137,7 @@ def fast_style():
         content_images = hf['images'].value
         content_names = hf['filenames'].value
 
-    total_batch = int(np.floor(len(content_images) / (batch_size)))
+    total_batch = int(np.floor(len(content_images) / (10 * batch_size)))
 
     total_loss = 0
     total_content = 0
