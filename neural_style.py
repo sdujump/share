@@ -16,7 +16,7 @@ os.environ["CUDA_VISIBLE_DEVICES"] = "0"
 print device_lib.list_local_devices()
 
 tf.app.flags.DEFINE_integer("CONTENT_WEIGHT", 5, "5e0Weight for content features loss")
-tf.app.flags.DEFINE_integer("STYLE_WEIGHT", 30, "1e2Weight for style features loss")
+tf.app.flags.DEFINE_integer("STYLE_WEIGHT", 20, "1e2Weight for style features loss")
 tf.app.flags.DEFINE_integer("TV_WEIGHT", 1e-5, "Weight for total variation loss")
 tf.app.flags.DEFINE_string("VGG_PATH", "imagenet-vgg-verydeep-19.mat", "Path to vgg model weights")
 tf.app.flags.DEFINE_string("CONTENT_LAYERS", "relu3_4", "Which VGG layer to extract content loss from")
@@ -184,7 +184,7 @@ def fast_style():
     output_format = tf.saturate_cast(tf.concat(0, [generated[-1], content_holder]) + mean_pixel, tf.uint8)
 
     tvars = tf.trainable_variables()
-    train_op = tf.train.AdamOptimizer(1e-3)
+    train_op = tf.train.AdamOptimizer(FLAGS.LEARNING_RATE)
     grads = train_op.compute_gradients(total_loss, tvars)
     update = train_op.apply_gradients(grads)
     saver = tf.train.Saver(tf.all_variables(), max_to_keep=0)
