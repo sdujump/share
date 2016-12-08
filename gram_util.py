@@ -15,8 +15,9 @@ def gram_np(layer):
     num_filters = shape[3]
     size = layer.size / num_images
     filters = np.reshape(layer, [num_images, -1, num_filters])
-    grams = np.matmul(np.swapaxes(filters, 1, 2), filters) / tf.to_float(size)
-    return np.triu_indices(grams)
+    grams = np.matmul(np.swapaxes(filters, 1, 2), filters) / size
+    gram_ind = np.triu_indices_from(grams[0])
+    return grams[0][gram_ind]
 
 
 def gram(layer):
@@ -33,7 +34,7 @@ def gram_encoder(gram, reuse=False):
     with tf.variable_scope('gram_enc', reuse=reuse):
         initializer = tf.truncated_normal_initializer(stddev=0.02)
         zGh = slim.fully_connected(gram, 1024, activation_fn=tf.nn.relu, reuse=reuse, scope='gram_project', weights_initializer=initializer)
-        zGram = slim.fully_connected(zGh, 20, activation_fn=None, reuse=reuse, scope='gram_project', weights_initializer=initializer)
+        zGram = slim.fully_connected(zGh, 32, activation_fn=None, reuse=reuse, scope='gram_project', weights_initializer=initializer)
         return zGram
 
 
@@ -146,6 +147,10 @@ def merge(images, size):
     return img
 
 
+def get_image(image_path, width, height, mode='RGB'):
+    return scipy.misc.imresize(scipy.misc.imread(image_path, mode=mode), [height, width]).astype(np.float)
+
+
 def data_iterator(images, filenames, batch_size):
     """ A simple data iterator """
     batch_idx = 0
@@ -176,90 +181,24 @@ def get_dataset(path, dim, channel=3):
     print("dataset loaded")
 
 
-def get_image(image_path, width, height, mode='RGB'):
-    return scipy.misc.imresize(scipy.misc.imread(image_path, mode=mode), [height, width]).astype(np.float)
-
-
-def discriminator2(x, cat_list, conts, reuse=False):
-    # initializer = tf.truncated_normal_initializer(stddev=0.02)
-    with tf.variable_scope('discriminator', reuse=reuse):
-
-        x_net, _ = vgg.net('imagenet-vgg-verydeep-19.mat', x)
-
-        dis = slim.fully_connected(slim.flatten(
-            x_net['relu4_2']), 1024, normalizer_fn=slim.batch_norm, activation_fn=lrelu, reuse=reuse, scope='d_fc1')
-
-        d_out = slim.fully_connected(
-            dis, 1, normalizer_fn=slim.batch_norm, activation_fn=tf.nn.sigmoid, reuse=reuse, scope='d_out')
-
-        q_a = slim.fully_connected(dis, 128, normalizer_fn=slim.batch_norm,
-                                   activation_fn=tf.nn.relu, reuse=reuse, scope='q_fc1')
-
-        # Here we define the unique layers used for the q-network. The number of outputs depends on the number of
-        # latent variables we choose to define.
-        q_cat_outs = []
-        for idx, var in enumerate(cat_list):
-            q_outA = slim.fully_connected(q_a, var, activation_fn=tf.nn.softmax, reuse=reuse, scope='q_out_cat_' + str(idx))
-            q_cat_outs.append(q_outA)
-
-        q_cont_outs = None
-        if conts > 0:
-            q_cont_outs = slim.fully_connected(q_a, conts, activation_fn=tf.nn.tanh, reuse=reuse, scope='q_out_cont_' + str(conts))
-
-        return d_out, q_cat_outs, q_cont_outs
-
-
-def gram(layer):
-    shape = tf.shape(layer)
-    num_images = shape[0]
-    num_filters = shape[3]
-    size = tf.size(layer)
-    filters = tf.reshape(layer, tf.pack([num_images, -1, num_filters]))
-    grams = tf.batch_matmul(filters, filters, adj_x=True) / \
-        tf.to_float(size)  # / FLAGS.BATCH_SIZE)
-
-    return grams
-
-
-def average_gradients(tower_grads):
-    """Calculate the average gradient for each shared variable across all towers.
-    Note that this function provides a synchronization point across all towers.
-    Args:
-    tower_grads: List of lists of (gradient, variable) tuples. The outer list
-      is over individual gradients. The inner list is over the gradient
-      calculation for each tower.
-    Returns:
-     List of pairs of (gradient, variable) where the gradient has been averaged
-     across all towers.
-    """
-    average_grads = []
-    for grad_and_vars in zip(*tower_grads):
-        # Note that each grad_and_vars looks like the following:
-        #   ((grad0_gpu0, var0_gpu0), ... , (grad0_gpuN, var0_gpuN))
-        grads = []
-        for g, _ in grad_and_vars:
-            if g is None:
-                continue
-            # Add 0 dimension to the gradients to represent the tower.
-            expanded_g = tf.expand_dims(g, 0)
-
-            # Append on a 'tower' dimension which we will average over below.
-            grads.append(expanded_g)
-
-        if grads == []:
-            continue
-        # Average over the 'tower' dimension.
-        grad = tf.concat(0, grads)
-        grad = tf.reduce_mean(grad, 0)
-
-        # Keep in mind that the Variables are redundant because they are shared
-        # across towers. So .. we will just return the first tower's pointer to
-        # the Variable.
-        v = grad_and_vars[0][1]
-        grad_and_var = (grad, v)
-        average_grads.append(grad_and_var)
-    return average_grads
+def get_grams(path):
+    filenames = [join(path, f) for f in listdir(path) if isfile(join(path, f)) & f.lower().endswith('jpg')]
+    grams = []
+    mean_pixel = [123.68, 116.779, 103.939]  # ImageNet average from VGG ..
+    tf.InteractiveSession()
+    for i in tqdm.tqdm(range(len(filenames))):
+        image = scipy.misc.imread(filenames[i], mode='RGB').astype(np.float) - mean_pixel
+        image = np.expand_dims(image, 0).astype(np.float32)
+        style_net, _ = vgg.net('imagenet-vgg-verydeep-19.mat', image)
+        style_layer = style_net['relu2_2']
+        gram = gram_np(style_layer.eval())
+        grams.append(gram)
+    with h5py.File(''.join(['datasets/dataset-grams-relu2_2.h5']), 'w') as f:
+        grams = f.create_dataset("images", data=grams)
+        filenames = f.create_dataset('filenames', data=filenames)
+    print("dataset loaded")
 
 
 if __name__ == '__main__':
-    get_dataset('./train_images/', 32)
+    # get_dataset('./train_images/', 32)
+    get_grams('./styles/')
