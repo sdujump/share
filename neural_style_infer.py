@@ -15,7 +15,7 @@ import model
 os.environ["CUDA_VISIBLE_DEVICES"] = "1"
 print device_lib.list_local_devices()
 
-tf.app.flags.DEFINE_string("model", "model-style05.ckpt-1", "path")
+tf.app.flags.DEFINE_string("model", "model-style05.ckpt-0", "path")
 
 FLAGS = tf.app.flags.FLAGS
 
