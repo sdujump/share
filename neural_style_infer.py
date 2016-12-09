@@ -66,4 +66,4 @@ if __name__ == '__main__':
     # tf.app.run()
     # get_dataset('coco', 256, channel=3)
     # fast_style()
-    inference('style_model/' + FLAGS.model, 'style05')
+    inference('style_model/' + FLAGS.model, FLAGS.tag)
