@@ -47,15 +47,16 @@ def inference(path, name, gpun):
         total_batch = len(content_images)
         content_iter = data_iterator(content_images, content_names, 1)
 
+        config = tf.ConfigProto(allow_soft_placement = True)
+        sess = tf.Session(config = config)
+        sess.run(tf.initialize_all_variables())
+        sess.run(tf.initialize_local_variables())
+        saver = tf.train.Saver()
+        saver.restore(sess, path)
+        
         with tf.device('/gpu:%d' % gpun):
             generated = model.net(content_holder)
             output_format = tf.saturate_cast(generated + mean_pixel, tf.uint8)
-
-            sess = tf.Session()
-            sess.run(tf.initialize_all_variables())
-            sess.run(tf.initialize_local_variables())
-            saver = tf.train.Saver()
-            saver.restore(sess, path)
 
             for j in tqdm.tqdm(xrange(total_batch)):
                 content_image, content_name = content_iter.next()
