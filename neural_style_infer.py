@@ -43,9 +43,12 @@ def inference(path, name, gpun):
         with h5py.File(''.join(['datasets/coco-256.h5']), 'r') as hf:
             content_images = hf['images'].value
             content_names = hf['filenames'].value
+
         content_holder = tf.placeholder(shape=[1, 256, 256, 3], dtype=tf.float32)  # Random vector
         total_batch = len(content_images)
         content_iter = data_iterator(content_images, content_names, 1)
+        generated = model.net(content_holder)
+        output_format = tf.saturate_cast(generated + mean_pixel, tf.uint8)
 
         config = tf.ConfigProto(allow_soft_placement = True)
         sess = tf.Session(config = config)
@@ -53,11 +56,8 @@ def inference(path, name, gpun):
         sess.run(tf.initialize_local_variables())
         saver = tf.train.Saver()
         saver.restore(sess, path)
-
+        
         with tf.device('/gpu:%d' % gpun):
-            generated = model.net(content_holder)
-            output_format = tf.saturate_cast(generated + mean_pixel, tf.uint8)
-
             for j in tqdm.tqdm(xrange(total_batch)):
                 content_image, content_name = content_iter.next()
                 print "stylize: " + str(content_name)
