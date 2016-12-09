@@ -17,10 +17,6 @@ tf.app.flags.DEFINE_string("tag", "style05", "tag")
 tf.app.flags.DEFINE_string("usegpu", "0", "gpu")
 FLAGS = tf.app.flags.FLAGS
 
-
-os.environ["CUDA_VISIBLE_DEVICES"] = FLAGS.usegpu
-print device_lib.list_local_devices()
-
 mean_pixel = [123.68, 116.779, 103.939]  # ImageNet average from VGG ..
 
 
@@ -66,4 +62,6 @@ if __name__ == '__main__':
     # tf.app.run()
     # get_dataset('coco', 256, channel=3)
     # fast_style()
+    os.environ["CUDA_VISIBLE_DEVICES"] = FLAGS.usegpu
+    print device_lib.list_local_devices()
     inference('style_model/' + FLAGS.model, FLAGS.tag)
