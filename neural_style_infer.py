@@ -53,7 +53,7 @@ def inference(path, name, gpun):
         sess.run(tf.initialize_local_variables())
         saver = tf.train.Saver()
         saver.restore(sess, path)
-        
+
         with tf.device('/gpu:%d' % gpun):
             generated = model.net(content_holder)
             output_format = tf.saturate_cast(generated + mean_pixel, tf.uint8)
@@ -64,6 +64,7 @@ def inference(path, name, gpun):
                 content_image = np.reshape(content_image, [1, 256, 256, 3]) - mean_pixel
                 output_t = sess.run(output_format, feed_dict={content_holder: content_image})
                 scipy.misc.imsave('coco_style/%s-%s.png' % (content_name[0][5:-4], name), output_t[0])
+
 
 if __name__ == '__main__':
     # tf.app.run()
