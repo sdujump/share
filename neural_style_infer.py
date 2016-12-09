@@ -12,12 +12,14 @@ from tensorflow.python.client import device_lib
 import neural_model
 import model
 
-os.environ["CUDA_VISIBLE_DEVICES"] = "1"
-print device_lib.list_local_devices()
-
 tf.app.flags.DEFINE_string("model", "model-style05.ckpt-0", "path")
-
+tf.app.flags.DEFINE_string("tag", "style05", "tag")
+tf.app.flags.DEFINE_string("gpu", "0", "gpu")
 FLAGS = tf.app.flags.FLAGS
+
+
+os.environ["CUDA_VISIBLE_DEVICES"] = FLAGS.gpu
+print device_lib.list_local_devices()
 
 mean_pixel = [123.68, 116.779, 103.939]  # ImageNet average from VGG ..
 
