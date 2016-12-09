@@ -38,7 +38,7 @@ def data_iterator(images, filenames, batch_size):
             yield images_batch, names_batch
 
 
-def main(rgv=None):
+def main(argv=None):
     with h5py.File(''.join(['datasets/coco-256.h5']), 'r') as hf:
         content_images = hf['images'].value
         content_names = hf['filenames'].value
