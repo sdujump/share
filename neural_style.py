@@ -147,7 +147,8 @@ def fast_style():
         sess.run(tf.initialize_local_variables())
 
         print 'style: ' + style_names[i]
-        style_image = scipy.misc.imread(style_names[i], mode='RGB') - mean_pixel
+        # style_image = scipy.misc.imread(style_names[i], mode='RGB') - mean_pixel
+        style_image = scipy.misc.imresize(scipy.misc.imread(style_names[i], mode='RGB'), [512, 512]) - mean_pixel
         style_image = np.expand_dims(style_image, 0)
         epoch = 0
 
