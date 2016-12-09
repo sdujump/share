@@ -12,10 +12,12 @@ from tensorflow.python.client import device_lib
 import neural_model
 import model
 
+FLAGS = tf.app.flags.FLAGS
+
 tf.app.flags.DEFINE_string("model", "", "path")
 tf.app.flags.DEFINE_string("tag", "", "tag")
 tf.app.flags.DEFINE_string("usegpu", "", "gpu")
-FLAGS = tf.app.flags.FLAGS
+
 
 
 os.environ["CUDA_VISIBLE_DEVICES"] = FLAGS.usegpu
