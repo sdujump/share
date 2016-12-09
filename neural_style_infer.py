@@ -39,7 +39,7 @@ def data_iterator(images, filenames, batch_size):
             yield images_batch, names_batch
 
 
-def main(_):
+def main(argv=None):
     with h5py.File(''.join(['datasets/coco-256.h5']), 'r') as hf:
         content_images = hf['images'].value
         content_names = hf['filenames'].value
@@ -54,7 +54,7 @@ def main(_):
     sess.run(tf.initialize_all_variables())
     sess.run(tf.initialize_local_variables())
     saver = tf.train.Saver()
-    saver.restore(sess, FLAGS.model)
+    saver.restore(sess, "style_model/" + FLAGS.model)
 
     for j in tqdm.tqdm(xrange(total_batch)):
         content_image, content_name = content_iter.next()
