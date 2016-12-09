@@ -19,7 +19,6 @@ tf.app.flags.DEFINE_string("tag", "", "tag")
 tf.app.flags.DEFINE_string("usegpu", "", "gpu")
 
 
-
 os.environ["CUDA_VISIBLE_DEVICES"] = FLAGS.usegpu
 print device_lib.list_local_devices()
 
@@ -40,7 +39,7 @@ def data_iterator(images, filenames, batch_size):
             yield images_batch, names_batch
 
 
-def main(argv=None):
+def main(_):
     with h5py.File(''.join(['datasets/coco-256.h5']), 'r') as hf:
         content_images = hf['images'].value
         content_names = hf['filenames'].value
