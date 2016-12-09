@@ -350,4 +350,4 @@ if __name__ == '__main__':
     # tf.app.run()
     # get_dataset('coco', 256, channel=3)
     # fast_style()
-    inference('style_model/model-style05.ckpt-1', 'style05')
+    inference('model-style05.ckpt-0', 'style05')
