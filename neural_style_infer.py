@@ -14,7 +14,7 @@ import model
 
 tf.app.flags.DEFINE_string("model", "model-style05.ckpt-0", "path")
 tf.app.flags.DEFINE_string("tag", "style05", "tag")
-tf.app.flags.DEFINE_integer("gpu", , "gpu")
+tf.app.flags.DEFINE_integer("gpu", 0, "gpu")
 FLAGS = tf.app.flags.FLAGS
 
 
