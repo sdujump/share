@@ -20,8 +20,8 @@ tf.app.flags.DEFINE_integer("STYLE_WEIGHT", 30, "1e2Weight for style features lo
 tf.app.flags.DEFINE_integer("TV_WEIGHT", 1e-5, "Weight for total variation loss")
 tf.app.flags.DEFINE_string("VGG_PATH", "imagenet-vgg-verydeep-19.mat", "Path to vgg model weights")
 tf.app.flags.DEFINE_string("CONTENT_LAYERS", "relu3_4", "Which VGG layer to extract content loss from")
-tf.app.flags.DEFINE_string("STYLE_LAYERS", "relu1_2,relu2_2,relu3_4,relu4_4", "Which layers to extract style from")
-# tf.app.flags.DEFINE_string("STYLE_LAYERS", "relu3_4", "Which layers to extract style from")
+# tf.app.flags.DEFINE_string("STYLE_LAYERS", "relu1_2,relu2_2,relu3_4,relu4_4", "Which layers to extract style from")
+tf.app.flags.DEFINE_string("STYLE_LAYERS", "relu3_4", "Which layers to extract style from")
 tf.app.flags.DEFINE_float("LEARNING_RATE", 1e-3, "Learning rate")
 tf.app.flags.DEFINE_string("MODEL_DIR", "style_model", "path")
 
