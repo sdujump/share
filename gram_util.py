@@ -6,7 +6,11 @@ from os import listdir
 from os.path import isfile, join
 import scipy.misc
 import tensorflow.contrib.slim as slim
+from tensorflow.python.client import device_lib
 import vgg
+import os
+os.environ["CUDA_VISIBLE_DEVICES"] = "1"
+print device_lib.list_local_devices()
 
 
 def gram_np(layer):
