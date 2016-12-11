@@ -63,6 +63,7 @@ def main(argv=None):
         output_t = sess.run(output_format, feed_dict={content_holder: content_image})
         scipy.misc.imsave('coco_style/%s-%s.png' % (content_name[0][5:-4], FLAGS.tag), output_t[0])
 
+
 if __name__ == '__main__':
     tf.app.run()
     # get_dataset('coco', 256, channel=3)
