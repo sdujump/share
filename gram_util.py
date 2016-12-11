@@ -194,8 +194,8 @@ def get_grams(path):
         style_layer = style_net['relu3_4']
         gram = gram_np(style_layer.eval())
         grams.append(gram)
-    with h5py.File(''.join(['datasets/dataset-grams-relu2_2.h5']), 'w') as f:
-        grams = f.create_dataset("images", data=grams)
+    with h5py.File(''.join(['datasets/dataset-grams-relu3_4.h5']), 'w') as f:
+        grams = f.create_dataset("grams", data=grams)
         filenames = f.create_dataset('filenames', data=filenames)
     print("dataset loaded")
 
@@ -203,3 +203,8 @@ def get_grams(path):
 if __name__ == '__main__':
     # get_dataset('./train_images/', 32)
     get_grams('./styles/')
+    '''
+    with h5py.File(''.join(['datasets/dataset-grams-relu3_4.h5']), 'r') as hf:
+        grams = hf['grams'].value
+        filenames = hf['filenames'].value
+    '''
