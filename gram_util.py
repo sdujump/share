@@ -183,10 +183,11 @@ def get_grams(path):
     mean_pixel = [123.68, 116.779, 103.939]  # ImageNet average from VGG ..
     tf.InteractiveSession()
     for i in tqdm.tqdm(range(len(filenames))):
-        image = scipy.misc.imread(filenames[i], mode='RGB').astype(np.float) - mean_pixel
+        image = scipy.misc.imresize(scipy.misc.imread(filenames[i], mode='RGB'), [512, 512]) - mean_pixel
+        # image = scipy.misc.imread(filenames[i], mode='RGB').astype(np.float) - mean_pixel
         image = np.expand_dims(image, 0).astype(np.float32)
         style_net, _ = vgg.net('imagenet-vgg-verydeep-19.mat', image)
-        style_layer = style_net['relu2_2']
+        style_layer = style_net['relu3_4']
         gram = gram_np(style_layer.eval())
         grams.append(gram)
     with h5py.File(''.join(['datasets/dataset-grams-relu2_2.h5']), 'w') as f:
