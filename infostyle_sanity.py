@@ -104,7 +104,7 @@ def sanity_loss(gram_in, zs):
     x_net, _ = vgg.net('imagenet-vgg-verydeep-19.mat', Gz)
 
     x_layer = x_net['relu3_4']
-    gram_out = gram_util.gram(x_layer)
+    gram_out = gram_util.gram_tf(x_layer)
 
     # This optimizes the discriminator.
     # Combine losses for each of the continous variables.

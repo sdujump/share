@@ -9,7 +9,7 @@ import tensorflow.contrib.slim as slim
 from tensorflow.python.client import device_lib
 import vgg
 import os
-os.environ["CUDA_VISIBLE_DEVICES"] = "1"
+os.environ["CUDA_VISIBLE_DEVICES"] = "0"
 print device_lib.list_local_devices()
 
 
@@ -24,7 +24,7 @@ def gram_np(layer):
     return grams[0][gram_ind]
 
 
-def gram(layer):
+def gram_tf(layer):
     shape = layer.get_shape().as_list()
     num_images = shape[0]
     num_filters = shape[3]
@@ -111,7 +111,7 @@ def discriminator(bottom, reuse=False):
         d_out = slim.fully_connected(dis4, 1, activation_fn=tf.nn.sigmoid,
                                      reuse=reuse, scope='d_out', weights_initializer=initializer)
 
-        gram_out = gram(x_layer)
+        gram_out = gram_tf(x_layer)
 
         return d_out, gram_out
 
@@ -192,8 +192,9 @@ def get_grams(path):
         image = np.expand_dims(image, 0).astype(np.float32)
         style_net, _ = vgg.net('imagenet-vgg-verydeep-19.mat', image)
         style_layer = style_net['relu3_4']
-        gram = gram_np(style_layer.eval())
-        grams.append(gram)
+        # gram = gram_np(style_layer.eval())
+        gram = gram_tf(style_layer)
+        grams.append(gram.eval())
     with h5py.File(''.join(['datasets/dataset-grams-relu3_4.h5']), 'w') as f:
         grams = f.create_dataset("grams", data=grams)
         filenames = f.create_dataset('filenames', data=filenames)
