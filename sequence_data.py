@@ -18,7 +18,7 @@ def get_image(image_path, width, height, mode='RGB'):
 
 def get_dataset(path, dim, channel=3):
     filenames = [join(path, f) for f in listdir(path) if isfile(
-        join(path, f)) & f.lower().endswith('jpg')]
+        join(path, f)) & f.lower().endswith('png')]
     images = np.zeros((len(filenames), dim * dim * channel), dtype=np.uint8)
     # make a dataset
     for i in tqdm.tqdm(range(len(filenames))):
