@@ -26,7 +26,7 @@ def get_dataset(path, dim, channel=3):
         image = get_image(filenames[i], dim, dim)
         images[i] = image.flatten()
         # get the metadata
-    with h5py.File(''.join(['datasets/coco-256.h5']), 'w') as f:
+    with h5py.File(''.join(['datasets/coco_style-256.h5']), 'w') as f:
         images = f.create_dataset("images", data=images)
         filenames = f.create_dataset('filenames', data=filenames)
     print("dataset loaded")
@@ -48,4 +48,4 @@ def data_iterator(images, filenames, batch_size):
 
 if __name__ == '__main__':
     # tf.app.run()
-    get_dataset('coco', 256, channel=3)
+    get_dataset('coco_style', 256, channel=3)
