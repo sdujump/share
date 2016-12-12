@@ -17,19 +17,29 @@ def get_image(image_path, width, height, mode='RGB'):
 
 
 def get_dataset(path, dim, channel=3):
-    filenames = [join(path, f) for f in listdir(path) if isfile(join(path, f)) & f.lower().endswith('png')]
-    images = []
-    # np.zeros((len(filenames), dim * dim * channel), dtype=np.uint8)
+    filenames = [join(path, f) for f in listdir(path) if isfile(join(path, f)) & f.lower().endswith('jpg')]
+    filenum = len(filenames)
+    size = dim * dim * channel
+    seg = 100
+    chunknum = filenum / seg
+    chunknum_tmp = chunknum
+    remind = filenum % seg
     # make a dataset
-    for i in tqdm.tqdm(range(len(filenames))):
-        # for i in tqdm.tqdm(range(10)):
-        image = get_image(filenames[i], dim, dim)
-        # images[i] = image.flatten()
-        images.append(image)
-        # get the metadata
-    with h5py.File(''.join(['datasets/coco_style-256.h5']), 'w') as f:
-        images = f.create_dataset("images", data=images)
-        filenames = f.create_dataset('filenames', data=filenames)
+    f = h5py.File('datasets/coco_style-256.h5', 'w')
+    images_h5py = f.create_dataset("images", shape=(filenum, size))
+    filenames = f.create_dataset('filenames', data=filenames)
+    for jj in tqdm.tqdm(range(seg)):
+        images = []
+        if jj == seg - 1:
+            chunknum_tmp = chunknum_tmp + remind
+        for ii in range(chunknum_tmp):
+            # for i in tqdm.tqdm(range(10)):
+            image = get_image(filenames[ii + jj * chunknum], dim, dim)
+            # images[i] = image.flatten()
+            images.append(image.flatten())
+            # get the metadata
+        images_h5py[jj * chunknum:jj * chunknum + chunknum_tmp] = images
+        # filenames = f.create_dataset('filenames', data=filenames)
     print("dataset loaded")
 
 
@@ -50,3 +60,8 @@ def data_iterator(images, filenames, batch_size):
 if __name__ == '__main__':
     # tf.app.run()
     get_dataset('coco_style', 256, channel=3)
+    '''
+    with h5py.File(''.join(['datasets/coco_style-256.h5']), 'r') as hf:
+        grams = hf['images'].value
+        filenames = hf['filenames'].value
+    '''

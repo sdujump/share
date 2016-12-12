@@ -18,12 +18,12 @@ with h5py.File(''.join(['datasets/dataset-grams-relu3_4.h5']), 'r') as hf:
     grams = hf['grams'].value
     filenames = hf['filenames'].value
 
+
 def show_variables(variales):
     for i in range(len(variales)):
         print(variales[i].name)
 
 
-mean_pixel = [123.68, 116.779, 103.939]  # ImageNet average from VGG ..
 layer = 'relu3_4'
 z_size = 128  # Size of initial z vector used for generator.
 image_size = 128
@@ -99,6 +99,7 @@ def sanity_loss(gram_in, zs):
 
     Gz = gram_util.generator(z_lat)  # Generates images from random z vectors
     # Produces probabilities for real images
+    Gz = (Gz + 1) * 127.5 - mean_pixel
 
     x_net, _ = vgg.net('imagenet-vgg-verydeep-19.mat', Gz)
 
