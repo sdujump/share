@@ -26,8 +26,8 @@ def get_dataset(path, dim, channel=3):
     remind = filenum % seg
     # make a dataset
     f = h5py.File('datasets/coco_style-256.h5', 'w')
-    images = f.create_dataset("images", shape=(filenum, size))
-    filenames = f.create_dataset('filenames', data=filenames)
+    images_h5py = f.create_dataset("images", shape=(chunknum, size), maxshape=(filenum, size), chunks=(chunknum, size))
+    filenames_h5py = f.create_dataset('filenames', data=filenames)
     for jj in tqdm.tqdm(range(seg)):
         images_batch = []
         if jj == seg - 1:
@@ -38,7 +38,7 @@ def get_dataset(path, dim, channel=3):
             # images[i] = image.flatten()
             images_batch.append(image.flatten())
             # get the metadata
-        images[jj * chunknum:jj * chunknum + chunknum_tmp] = images_batch
+        images_h5py[jj * chunknum:jj * chunknum + chunknum_tmp] = images_batch
         # filenames = f.create_dataset('filenames', data=filenames)
     print("dataset loaded")
 
@@ -59,6 +59,7 @@ def data_iterator(images, filenames, batch_size):
 
 if __name__ == '__main__':
     # tf.app.run()
+
     get_dataset('coco_style', 256, channel=3)
     '''
     with h5py.File(''.join(['datasets/coco_style-256.h5']), 'r') as hf:
