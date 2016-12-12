@@ -20,14 +20,14 @@ def get_dataset(path, dim, channel=3):
     filenames = [join(path, f) for f in listdir(path) if isfile(join(path, f)) & f.lower().endswith('png')]
     filenum = len(filenames)
     size = dim * dim * channel
-    seg = 100
+    seg = 10000
     chunknum = filenum / seg
     chunknum_tmp = chunknum
     remind = filenum % seg
     # make a dataset
     f = h5py.File('datasets/coco_style-256.h5', 'w')
-    images_h5py = f.create_dataset("images", shape=(chunknum, size), maxshape=(filenum, size), chunks=(chunknum, size))
-    filenames_h5py = f.create_dataset('filenames', data=filenames)
+    images_h5py = f.create_dataset("images", shape=(chunknum, size), maxshape=(filenum, size), chunks=(chunknum, size), compression="gzip")
+    filenames_h5py = f.create_dataset('filenames', data=filenames, compression="gzip")
     for jj in tqdm.tqdm(range(seg)):
         images_batch = []
         if jj == seg - 1:
