@@ -30,7 +30,7 @@ def gram(layer):
     num_filters = shape[3]
     size = tf.size(layer) / num_images
     filters = tf.reshape(layer, tf.pack([num_images, -1, num_filters]))
-    grams = tf.batch_matmul(filters, filters, adj_x=True) / tf.to_double(size)
+    grams = tf.batch_matmul(filters, filters, adj_x=True) / tf.to_float(size)
     triu = np.triu_indices_from(np.zeros((num_filters, num_filters)))
     ind = triu[0] * num_filters + triu[1]
     grams_fla = tf.contrib.layers.flatten(grams)
@@ -40,8 +40,8 @@ def gram(layer):
 def gram_encoder(gram, reuse=False):
     with tf.variable_scope('gram_enc', reuse=reuse):
         initializer = tf.truncated_normal_initializer(stddev=0.02)
-        zGh = slim.fully_connected(gram, 1024, activation_fn=tf.nn.relu, reuse=reuse, scope='gram_project', weights_initializer=initializer)
-        zGram = slim.fully_connected(zGh, 32, activation_fn=None, reuse=reuse, scope='gram_project', weights_initializer=initializer)
+        zGh = slim.fully_connected(gram, 1024, activation_fn=tf.nn.relu, reuse=reuse, scope='gram_fc1', weights_initializer=initializer)
+        zGram = slim.fully_connected(zGh, 32, activation_fn=None, reuse=reuse, scope='gram_fc2', weights_initializer=initializer)
         return zGram
 
 
@@ -88,7 +88,7 @@ def discriminator(bottom, reuse=False):
 
         x_net, _ = vgg.net('imagenet-vgg-verydeep-19.mat', bottom)
 
-        x_layer = x_net['relu2_2']
+        x_layer = x_net['relu3_4']
 
         dis1 = slim.convolution2d(x_layer, 128, [3, 3], padding="SAME", stride=2,
                                   biases_initializer=None, activation_fn=lrelu,
