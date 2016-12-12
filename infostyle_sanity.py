@@ -84,7 +84,7 @@ def train_infogan():
                 # Save sample generator images for viewing training
                 # progress.
                 gram_util.save_images(np.reshape(samples[0:batch_size], [batch_size, image_size, image_size, 3]), [1, 10], sample_directory + '/fig' + str(epoch) + str(i) + '.png')
-        if epoch % 3 == 0:
+        if epoch % 20 == 0:
             if not os.path.exists(model_directory):
                 os.makedirs(model_directory)
             saver.save(sess, model_directory + '/model-epoch-' + str(epoch) + '.cptk', global_step=epoch)
