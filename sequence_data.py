@@ -17,14 +17,15 @@ def get_image(image_path, width, height, mode='RGB'):
 
 
 def get_dataset(path, dim, channel=3):
-    filenames = [join(path, f) for f in listdir(path) if isfile(
-        join(path, f)) & f.lower().endswith('png')]
-    images = np.zeros((len(filenames), dim * dim * channel), dtype=np.uint8)
+    filenames = [join(path, f) for f in listdir(path) if isfile(join(path, f)) & f.lower().endswith('png')]
+    images = []
+    # np.zeros((len(filenames), dim * dim * channel), dtype=np.uint8)
     # make a dataset
     for i in tqdm.tqdm(range(len(filenames))):
         # for i in tqdm.tqdm(range(10)):
         image = get_image(filenames[i], dim, dim)
-        images[i] = image.flatten()
+        # images[i] = image.flatten()
+        images.append(image)
         # get the metadata
     with h5py.File(''.join(['datasets/coco_style-256.h5']), 'w') as f:
         images = f.create_dataset("images", data=images)
