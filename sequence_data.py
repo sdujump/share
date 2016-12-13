@@ -30,14 +30,14 @@ def get_dataset(path, dimh, dimw, channel=3):
     filenames_h5py = f.create_dataset('filenames', data=filenames, compression="gzip")
     row_count = 0
     for jj in tqdm.tqdm(range(seg)):
-        images_batch = []
         if jj == seg - 1:
             chunknum_tmp = chunknum + remind
+        images_batch = np.zeros((chunknum_tmp, dimh * dimw * channel), dtype=np.uint8)
         for ii in range(chunknum_tmp):
             # for i in tqdm.tqdm(range(10)):
             image = get_image(filenames[ii + jj * chunknum], dimh, dimw)
             # images[i] = image.flatten()
-            images_batch.append(image.flatten())
+            images_batch[ii] = image.flatten()
             # get the metadata
         images_h5py.resize(row_count + chunknum_tmp, axis=0)
         images_h5py[row_count:] = images_batch

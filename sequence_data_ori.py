@@ -18,18 +18,16 @@ def get_image(image_path, height, width, mode='RGB'):
 
 def get_dataset(path, dimh, dimw, channel=3):
     filenames = [join(path, f) for f in listdir(path) if isfile(join(path, f)) & f.lower().endswith('jpg')]
-    images = []
-    # np.zeros((len(filenames), dim * dim * channel), dtype=np.uint8)
+    images = np.zeros((len(filenames), dimh * dimw * channel), dtype=np.uint8)
     # make a dataset
     for i in tqdm.tqdm(range(len(filenames))):
         # for i in tqdm.tqdm(range(10)):
         image = get_image(filenames[i], dimh, dimw)
-        image = image.flatten()
-        images.append(image)
+        images[i] = image.flatten()
         # get the metadata
     with h5py.File(''.join(['/home/jump/data/img_align_celeba.h5']), 'w') as f:
-        images = f.create_dataset("images", data=images)
-        filenames = f.create_dataset('filenames', data=filenames)
+        images_h5py = f.create_dataset("images", data=images)
+        filenames_h5py = f.create_dataset('filenames', data=filenames)
     print("dataset loaded")
 
 
