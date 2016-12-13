@@ -25,7 +25,7 @@ def get_dataset(path, dim, channel=3):
     chunknum_tmp = chunknum
     remind = filenum % seg
     # make a dataset
-    f = h5py.File('datasets/coco_style-256.h5', 'w')
+    f = h5py.File('~/data/coco_style-256.h5', 'w')
     images_h5py = f.create_dataset("images", shape=(chunknum, size), maxshape=(filenum, size), chunks=(chunknum, size), compression="gzip")
     filenames_h5py = f.create_dataset('filenames', data=filenames, compression="gzip")
     row_count = 0
@@ -63,7 +63,7 @@ def data_iterator(images, filenames, batch_size):
 if __name__ == '__main__':
     # tf.app.run()
 
-    get_dataset('coco_style', 256, channel=3)
+    get_dataset('~/data/coco_style', 256, channel=3)
     '''
     with h5py.File(''.join(['datasets/coco_style-256.h5']), 'r') as hf:
         grams = hf['images'].value
