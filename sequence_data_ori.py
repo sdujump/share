@@ -27,7 +27,7 @@ def get_dataset(path, dimh, dimw, channel=3):
         image = image.flatten()
         images.append(image)
         # get the metadata
-    with h5py.File(''.join(['datasets/img_align_celeba.h5']), 'w') as f:
+    with h5py.File(''.join(['/home/jump/data/img_align_celeba.h5']), 'w') as f:
         images = f.create_dataset("images", data=images)
         filenames = f.create_dataset('filenames', data=filenames)
     print("dataset loaded")
