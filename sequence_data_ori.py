@@ -17,7 +17,7 @@ def get_image(image_path, height, width, mode='RGB'):
 
 
 def get_dataset(path, dimh, dimw, channel=3):
-    filenames = [join(path, f) for f in listdir(path) if isfile(join(path, f)) & f.lower().endswith('png')]
+    filenames = [join(path, f) for f in listdir(path) if isfile(join(path, f)) & f.lower().endswith('jpg')]
     images = []
     # np.zeros((len(filenames), dim * dim * channel), dtype=np.uint8)
     # make a dataset
