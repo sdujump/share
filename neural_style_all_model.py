@@ -15,6 +15,8 @@ import model
 os.environ["CUDA_VISIBLE_DEVICES"] = "0"
 print device_lib.list_local_devices()
 
+tf.app.flags.DEFINE_integer("CONTENT_WEIGHT", 5, "5e0Weight for content features loss")
+tf.app.flags.DEFINE_integer("STYLE_WEIGHT", 30, "1e2Weight for style features loss")
 tf.app.flags.DEFINE_integer("TV_WEIGHT", 1e-5, "Weight for total variation loss")
 tf.app.flags.DEFINE_string("VGG_PATH", "imagenet-vgg-verydeep-19.mat", "Path to vgg model weights")
 tf.app.flags.DEFINE_string("CONTENT_LAYERS", "relu3_4", "Which VGG layer to extract content loss from")
@@ -297,17 +299,20 @@ def stylize():
 
 
 def main(argv=None):
-    style_paths = FLAGS.STYLE_IMAGES
     style_layers = FLAGS.STYLE_LAYERS.split(',')
-    content_path = FLAGS.CONTENT_IMAGE
     content_layers = FLAGS.CONTENT_LAYERS.split(',')
 
-    style_features_t = get_style_features(style_paths, style_layers)
-    content_features_t, image_t = get_content_features(content_path, content_layers)
+    style_image = scipy.misc.imresize(scipy.misc.imread('style05.jpg', mode='RGB'), [256, 256]) - mean_pixel
+    style_image = np.expand_dims(style_image, 0).astype(np.float32)
+    content_image = scipy.misc.imresize(scipy.misc.imread('1.jpg', mode='RGB'), [256, 256]) - mean_pixel
+    content_image = np.expand_dims(content_image, 0).astype(np.float32)
+    style_features_t = get_style_features(style_image, style_layers)
+    content_features_t = get_content_features(content_image, content_layers)
 
-    image = tf.constant(image_t)
-    random = tf.random_normal(image_t.shape)
-    initial = tf.Variable(random if FLAGS.RANDOM_INIT else image)
+    # image = tf.constant(content_image)
+    initial = tf.Variable(content_image, name='opt')
+    # random = tf.random_normal(content_image.shape)
+    # initial = tf.Variable(random if FLAGS.RANDOM_INIT else image)
 
     net, _ = vgg.net(FLAGS.VGG_PATH, initial)
 
@@ -323,31 +328,32 @@ def main(argv=None):
         layer_size = tf.size(style_gram)
         style_loss += tf.nn.l2_loss(gram(net[layer]) -
                                     style_gram) / tf.to_float(layer_size)
-    style_loss = FLAGS.STYLE_WEIGHT * style_loss / (len(style_layers) * len(style_paths))
+    style_loss = FLAGS.STYLE_WEIGHT * style_loss / len(style_layers)
 
     tv_loss = FLAGS.TV_WEIGHT * total_variation_loss(initial)
 
     total_loss = content_loss + style_loss + tv_loss
 
-    train_op = tf.train.AdamOptimizer(FLAGS.LEARNING_RATE).minimize(total_loss)
+    train_op = tf.train.AdamOptimizer(20).minimize(total_loss)
 
     output_image = tf.image.encode_png(tf.saturate_cast(tf.squeeze(initial) + mean_pixel, tf.uint8))
 
     with tf.Session() as sess:
         sess.run(tf.initialize_all_variables())
         start_time = time.time()
-        for step in range(FLAGS.NUM_ITERATIONS):
+        for step in range(100):
             _, loss_t = sess.run([train_op, total_loss])
             elapsed = time.time() - start_time
             start_time = time.time()
             print(step, elapsed, loss_t)
-        image_t = sess.run(output_image)
-        with open('out.png', 'wb') as f:
-            f.write(image_t)
+            if step % 10 == 0:
+                image_t = sess.run(output_image)
+                with open('out%s.png' % (step), 'wb') as f:
+                    f.write(image_t)
 
 
 if __name__ == '__main__':
-    # tf.app.run()
+    tf.app.run()
     # get_dataset('coco', 256, channel=3)
-    fast_style()
+    # fast_style()
     # inference('style_model/model-starry_night.ckpt-3', '0')
