@@ -20,7 +20,7 @@ def get_dataset(path, dim, channel=3):
     filenames = [join(path, f) for f in listdir(path) if isfile(join(path, f)) & f.lower().endswith('png')]
     filenum = len(filenames)
     size = dim * dim * channel
-    seg = 10000
+    seg = 1000
     chunknum = filenum / seg
     chunknum_tmp = chunknum
     remind = filenum % seg
@@ -28,17 +28,20 @@ def get_dataset(path, dim, channel=3):
     f = h5py.File('datasets/coco_style-256.h5', 'w')
     images_h5py = f.create_dataset("images", shape=(chunknum, size), maxshape=(filenum, size), chunks=(chunknum, size), compression="gzip")
     filenames_h5py = f.create_dataset('filenames', data=filenames, compression="gzip")
+    row_count = 0
     for jj in tqdm.tqdm(range(seg)):
         images_batch = []
         if jj == seg - 1:
-            chunknum_tmp = chunknum_tmp + remind
+            chunknum_tmp = chunknum + remind
         for ii in range(chunknum_tmp):
             # for i in tqdm.tqdm(range(10)):
             image = get_image(filenames[ii + jj * chunknum], dim, dim)
             # images[i] = image.flatten()
             images_batch.append(image.flatten())
             # get the metadata
-        images_h5py[jj * chunknum:jj * chunknum + chunknum_tmp] = images_batch
+        images_h5py.resize(row_count + chunknum_tmp, axis=0)
+        images_h5py[row_count:] = images_batch
+        row_count += chunknum_tmp
         # filenames = f.create_dataset('filenames', data=filenames)
     print("dataset loaded")
 
