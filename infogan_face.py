@@ -109,10 +109,11 @@ def train_infogan():
             # Draw a sample batch from MNIST dataset.
             start_time = time.time()
             image_flat, _ = iter_.next()
+            elapsed_time = time.time() - start_time
             image_batch = np.reshape(image_flat, [batch_size, 218, 178, 3])
             image_batch = center_crop(image_batch, crop_h=input_size)
             image_batch = (image_batch / 255.0 - 0.5) * 2.0
-            elapsed_time = time.time() - start_time
+
             print "fetch data time: " + str(elapsed_time)
 
             _, dLoss = sess.run([update_D, d_loss], feed_dict={real_in: image_batch, z_lat: zlat})  # Update the discriminator

@@ -131,7 +131,7 @@ def data_iterator(images, filenames, batch_size):
     batch_idx = 0
     while True:
         idxs = np.arange(0, len(images))
-        np.random.shuffle(idxs)
+        # np.random.shuffle(idxs)
         for batch_idx in range(0, len(images), batch_size):
             cur_idxs = idxs[batch_idx:batch_idx + batch_size]
             cur_idxs = np.sort(cur_idxs)
