@@ -129,9 +129,9 @@ def merge(images, size):
 def data_iterator(images, filenames, batch_size):
     """ A simple data iterator """
     batch_idx = 0
+    idxs = np.arange(0, len(images))
+    np.random.shuffle(idxs)
     while True:
-        idxs = np.arange(0, len(images))
-        # np.random.shuffle(idxs)
         for batch_idx in range(0, len(images), batch_size):
             cur_idxs = idxs[batch_idx:batch_idx + batch_size]
             cur_idxs = np.sort(cur_idxs)
