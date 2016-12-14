@@ -21,7 +21,7 @@ filenames = hf['filenames']
 # image, filename = iter_.next()
 
 
-def center_crop(x, crop_h, crop_w=None, resize_w=64):
+def center_crop(x, crop_h, crop_w=None):
     if crop_w is None:
         crop_w = crop_h
     h, w = x.shape[1:3]
@@ -29,10 +29,10 @@ def center_crop(x, crop_h, crop_w=None, resize_w=64):
     i = int(round((w - crop_w) / 2.))
     croped = x[:, j:j + crop_h, i:i + crop_w, :]
     # sess = tf.InteractiveSession()
-    tf_resized = tf.image.resize_images(croped, [resize_w, resize_w])
+    # tf_resized = tf.image.resize_images(croped, [resize_w, resize_w])
     # resized = tf_resized.eval()
     # sess.close()
-    return tf_resized
+    return croped
 
 
 def show_variables(variales):
@@ -144,6 +144,8 @@ def train_infogan():
 
 
 def tower_loss(real_in, z_lat):
+
+    real_in = tf.image.resize_images(real_in, [image_size, image_size])
 
     Gz = infogan_faceutil.generator(z_lat)  # Generates images from random z vectors
     # Produces probabilities for real images
