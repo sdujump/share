@@ -28,11 +28,11 @@ def center_crop(x, crop_h, crop_w=None, resize_w=64):
     j = int(round((h - crop_h) / 2.))
     i = int(round((w - crop_w) / 2.))
     croped = x[:, j:j + crop_h, i:i + crop_w, :]
-    sess = tf.InteractiveSession()
+    # sess = tf.InteractiveSession()
     tf_resized = tf.image.resize_images(croped, [resize_w, resize_w])
-    resized = tf_resized.eval()
-    sess.close()
-    return resized
+    # resized = tf_resized.eval()
+    # sess.close()
+    return tf_resized
 
 
 def show_variables(variales):
