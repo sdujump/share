@@ -43,6 +43,7 @@ def show_variables(variales):
 # tf.reset_default_graph()
 batch_size = 100
 z_size = 100  # Size of initial z vector used for generator.
+input_size = 108
 image_size = 64
 # Define latent variables.
 # Each entry in this list defines a categorical variable of a specific size.
@@ -65,7 +66,7 @@ def train_infogan():
     # initializer = tf.truncated_normal_initializer(stddev=0.02)
 
     # These placeholders are used for input into the generator and discriminator, respectively.
-    real_in = tf.placeholder(shape=[None, image_size, image_size, 3], dtype=tf.float32)  # Real images
+    real_in = tf.placeholder(shape=[None, input_size, input_size, 3], dtype=tf.float32)  # Real images
     z_lat = tf.placeholder(shape=[None, z_size + number_continuous], dtype=tf.float32)  # Random vector
 
     # The below code is responsible for applying gradient descent to update
@@ -108,7 +109,7 @@ def train_infogan():
             # Draw a sample batch from MNIST dataset.
             image_flat, _ = iter_.next()
             image_batch = np.reshape(image_flat, [batch_size, 218, 178, 3])
-            image_batch = center_crop(image_batch, crop_h=108)
+            image_batch = center_crop(image_batch, crop_h=input_size)
             image_batch = (image_batch / 255.0 - 0.5) * 2.0
 
             _, dLoss = sess.run([update_D, d_loss], feed_dict={real_in: image_batch, z_lat: zlat})  # Update the discriminator
