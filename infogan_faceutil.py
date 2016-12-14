@@ -130,7 +130,7 @@ def data_iterator(images, filenames, batch_size):
     """ A simple data iterator """
     batch_idx = 0
     idxs = np.arange(0, len(images))
-    np.random.shuffle(idxs)
+    # np.random.shuffle(idxs)
     while True:
         for batch_idx in range(0, len(images), batch_size):
             cur_idxs = idxs[batch_idx:batch_idx + batch_size]

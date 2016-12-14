@@ -49,7 +49,7 @@ image_size = 64
 # Each entry in this list defines a categorical variable of a specific size.
 # categorical_list = 10
 number_continuous = 2  # The number of continous variables.
-num_examples = 12600
+num_examples = images.shape[0]
 num_epochs = 50  # Total number of iterations to use.
 total_batch = int(np.floor(num_examples / (batch_size)))
 # Directory to save sample images from generator in.
@@ -107,14 +107,14 @@ def train_infogan():
             zlat = latent_prior(z_size, batch_size)
 
             # Draw a sample batch from MNIST dataset.
-            start_time = time.time()
+            # start_time = time.time()
             image_flat, _ = iter_.next()
-            elapsed_time = time.time() - start_time
+            # elapsed_time = time.time() - start_time
             image_batch = np.reshape(image_flat, [batch_size, 218, 178, 3])
             image_batch = center_crop(image_batch, crop_h=input_size)
             image_batch = (image_batch / 255.0 - 0.5) * 2.0
 
-            print "fetch data time: " + str(elapsed_time)
+            # print "fetch data time: " + str(elapsed_time)
 
             _, dLoss = sess.run([update_D, d_loss], feed_dict={real_in: image_batch, z_lat: zlat})  # Update the discriminator
             # Update the generator, twice for good measure.
